@@ -101,7 +101,9 @@ for swinfo in sw_details:
     swname, fabname = swinfo.split(',')
     print("Creating vRouter %s-vrouter on %s..." %(swname, swname), end='')
     sys.stdout.flush()
-    run_cmd("switch %s vrouter-create name %s-vrouter vnet %s-global router-type hardware bgp-as %s router-id %s" % (swname,swname,fabname,as_info[swname], rid_info[swname]))
+    run_cmd("switch %s vrouter-create name %s-vrouter vnet %s-global router-type "
+            "hardware bgp-as %s router-id %s" % (
+            swname,swname,fabname,as_info[swname],rid_info[swname]))
     print("Done")
     sys.stdout.flush()
     time.sleep(2)
@@ -110,9 +112,11 @@ for swinfo in sw_details:
 if args['prefix'] == 'ipv4':
     ip_generator = give_ipv4()
     netmask = '31'
+    mproto = "ipv4-unicast"
 else:
     ip_generator = give_ipv6(ipv6_start,ipv6_end)
     netmask = '126'
+    mproto = "ipv6-unicast"
 for link in links:
     sw1,p1,p2,sw2 = link
     ip1,ip2 = ip_generator.next().split(',')
@@ -125,9 +129,10 @@ for link in links:
     print("Done")
     sys.stdout.flush()
     #####BGP-Neighbor#####
-    print("Adding BGP neighbor for vrouter=%s-vrouter ip=%s remote-as=%s..." %(sw1,ip2,as_info[sw1]), end='')
+    print("Adding BGP neighbor for vrouter=%s-vrouter ip=%s remote-as=%s..." %(sw1,ip2,as_info[sw2]), end='')
     sys.stdout.flush()
-    run_cmd("vrouter-bgp-add vrouter-name %s-vrouter neighbor %s remote-as %s" %(sw1,ip2,as_info[sw1]))
+    run_cmd("vrouter-bgp-add vrouter-name %s-vrouter neighbor %s remote-as %s "
+            "multi-protocol %s" %(sw1,ip2,as_info[sw2],mproto))
     print("Done")
     sys.stdout.flush()
     ########################################
@@ -140,8 +145,9 @@ for link in links:
     print("Done")
     sys.stdout.flush()
     #####BGP-Neighbor#####
-    print("Adding BGP neighbor for vrouter=%s-vrouter ip=%s remote-as=%s..." %(sw2,ip1,as_info[sw2]), end='')
+    print("Adding BGP neighbor for vrouter=%s-vrouter ip=%s remote-as=%s..." %(sw2,ip1,as_info[sw1]), end='')
     sys.stdout.flush()
-    run_cmd("vrouter-bgp-add vrouter-name %s-vrouter neighbor %s remote-as %s" %(sw2,ip1,as_info[sw2]))
+    run_cmd("vrouter-bgp-add vrouter-name %s-vrouter neighbor %s remote-as %s "
+            "multi-protocol %s" %(sw2,ip1,as_info[sw1],mproto))
     print("Done")
     sys.stdout.flush()
