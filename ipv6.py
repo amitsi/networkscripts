@@ -55,7 +55,7 @@ def give_ipv6(start, end):
 
 def give_ipv4():
     tag = args['prefix']
-    for i in range(1,255,2):
+    for i in range(0,255,2):
         yield "%s%s,%s%s" %(tag,i,tag,i+1)
 
 def run_cmd(cmd):
