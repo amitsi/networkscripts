@@ -120,7 +120,7 @@ for swinfo in sw_details:
     time.sleep(20)
 
 # Create L3 interfaces with IPv6 addresssing
-if args['prefix'] == 'ipv4':
+if args['type'] == 'ipv4':
     ip_generator = give_ipv4()
     netmask = '31'
     mproto = "ipv4-unicast"
