@@ -10,7 +10,7 @@ import sys
 loopback_ip = "99.99.99."
 asnum = 65000
 ipv6_start = 15360
-ipv6_end = 15380
+ipv6_end = 15480
 
 ##################
 # ARGUMENT PARSING
@@ -29,18 +29,32 @@ parser.add_argument(
     help='IP Prefix. Defaults to \"2607:f4a0:3:0:250:56ff:feac:\" or \"192.168.100.\" based on type',
     required=False
 )
+parser.add_argument(
+    '-s', '--subnet',
+    help='IP Subnet. Defaults to \"64\", only valid for IPv6',
+    choices=["64","126"],
+    required=False,
+    default = "64"
+)
 args = vars(parser.parse_args())
 if not args['prefix']:
     args['prefix']="2607:f4a0:3:0:250:56ff:feac:" if args['type'] == "ipv6" else "192.168.100."
+
+if args['type'] == "ipv6":
+    subnet = args['subnet']
 
 ################
 # UTIL FUNCTIONS
 ################
 
 def give_ipv6(start, end):
-    tag = args['prefix']
-    for i in range(start,end,4):
-        yield "%s%.4x,%s%.4x" %(tag,i+1,tag,i+2)
+    if subnet == "64":
+        for i in range(1,300):
+            yield "2001:%s::1,2001:%s::2" % (i,i)
+    else:
+        tag = args['prefix']
+        for i in range(start,end,4):
+            yield "%s%.4x,%s%.4x" %(tag,i+1,tag,i+2)
 
 def give_ipv4():
     tag = args['prefix']
@@ -115,7 +129,7 @@ if args['prefix'] == 'ipv4':
     mproto = "ipv4-unicast"
 else:
     ip_generator = give_ipv6(ipv6_start,ipv6_end)
-    netmask = '126'
+    netmask = args['subnet']
     mproto = "ipv6-unicast"
 for link in links:
     sw1,p1,p2,sw2 = link
