@@ -106,7 +106,7 @@ for swinfo in sw_details:
             swname,swname,fabname,as_info[swname],rid_info[swname]))
     print("Done")
     sys.stdout.flush()
-    time.sleep(2)
+    time.sleep(20)
 
 # Create L3 interfaces with IPv6 addresssing
 if args['prefix'] == 'ipv4':
@@ -128,6 +128,7 @@ for link in links:
     run_cmd("switch %s port-config-modify port %s enable" %(sw1, p1))
     print("Done")
     sys.stdout.flush()
+    time.sleep(2)
     #####BGP-Neighbor#####
     print("Adding BGP neighbor for vrouter=%s-vrouter ip=%s remote-as=%s..." %(sw1,ip2,as_info[sw2]), end='')
     sys.stdout.flush()
@@ -135,6 +136,7 @@ for link in links:
             "multi-protocol %s" %(sw1,ip2,as_info[sw2],mproto))
     print("Done")
     sys.stdout.flush()
+    time.sleep(15)
     ########################################
     #####vRouter-Interface#####
     print("Adding vRouter interface to vrouter=%s-vrouter port=%s ip=%s/%s..." %(sw2,p2,ip2,netmask), end='')
@@ -144,6 +146,7 @@ for link in links:
     run_cmd("switch %s port-config-modify port %s enable" %(sw2, p2))
     print("Done")
     sys.stdout.flush()
+    time.sleep(2)
     #####BGP-Neighbor#####
     print("Adding BGP neighbor for vrouter=%s-vrouter ip=%s remote-as=%s..." %(sw2,ip1,as_info[sw1]), end='')
     sys.stdout.flush()
@@ -151,3 +154,4 @@ for link in links:
             "multi-protocol %s" %(sw2,ip1,as_info[sw1],mproto))
     print("Done")
     sys.stdout.flush()
+    time.sleep(15)
