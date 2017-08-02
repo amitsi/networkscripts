@@ -40,15 +40,12 @@ args = vars(parser.parse_args())
 if not args['prefix']:
     args['prefix']="2607:f4a0:3:0:250:56ff:feac:" if args['type'] == "ipv6" else "192.168.100."
 
-if args['type'] == "ipv6":
-    subnet = args['subnet']
-
 ################
 # UTIL FUNCTIONS
 ################
 
 def give_ipv6(start, end):
-    if subnet == "64":
+    if args['subnet'] == "64":
         for i in range(1,300):
             yield "2001:%s::1,2001:%s::2" % (i,i)
     else:
