@@ -110,6 +110,9 @@ links = []
 cluster_links = []
 lldp_cmd = "lldp-show format switch,local-port,port-id,sys-name parsable-delim ,"
 for conn in run_cmd(lldp_cmd):
+    if not conn:
+        print("No LLDP output")
+        exit(0)
     sw1,p1,p2,sw2 = conn.split(',')
     # Skip Clustered links
     if (sw1,sw2) in cluster_nodes or (sw2,sw1) in cluster_nodes:
