@@ -25,3 +25,13 @@ Setting vrrp-slave interface with sw: aquarius-ext-leaf2, vip: 10.16.109.1/24, v
 
 DONE
 root@dorado-ext-leaf1:~# 
+
+CLI (network-admin@dorado-ext-leaf1) > vrouter-interface-show vlan 109 format vrrp-id,ip,nic,netmask,vlan,is-primary,switch,nic-state,vrrp-state,
+vrouter-name               vrrp-id ip             nic      vlan is-primary nic-state vrrp-state 
+-------------------------- ------- -------------- -------- ---- ---------- --------- ---------- 
+dorado-ext-leaf1-vrouter           10.16.109.2/24 eth0.109 109  true       up                   
+dorado-ext-leaf1-vrouter   15      10.16.109.1/24 eth1.109 109             up        master     
+aquarius-ext-leaf2-vrouter         10.16.109.3/24 eth2.109 109  true       up                   
+aquarius-ext-leaf2-vrouter 15      10.16.109.1/24 eth3.109 109             down      slave      
+Warning! dorado-ext-leaf1's time is not in sync with the NTP Server.
+CLI (network-admin@dorado-ext-leaf1) > 
