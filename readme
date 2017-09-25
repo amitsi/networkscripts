@@ -1,0 +1,27 @@
+
+
+
+
+Example Run of VRRP
+
+root@dorado-ext-leaf1:~# python vrrp.py -s dorado-ext-leaf1,aquarius-ext-leaf2 -v 109 -i 10.16.109.1/24
+Set VRRP ID 15 for router dorado-ext-leaf1-vrouter
+Set VRRP ID 15 for router aquarius-ext-leaf2-vrouter
+
+Created VLAN = 109
+
+Creating VRRP interfaces using:
+    VIP=10.16.109.1/24
+    Primary IP=10.16.109.2/24
+    Secondary IP=10.16.109.3/24
+
+Creating interface with sw: dorado-ext-leaf1, ip: 10.16.109.2/24, vlan-id: 109
+
+Setting vrrp-master interface with sw: dorado-ext-leaf1, vip: 10.16.109.1/24, vlan-id: 109, vrrp-id: 15, vrrp-priority: 110
+
+Creating interface with sw: aquarius-ext-leaf2, ip: 10.16.109.3/24, vlan-id: 109
+
+Setting vrrp-slave interface with sw: aquarius-ext-leaf2, vip: 10.16.109.1/24, vlan-id: 109, vrrp-id: 15, vrrp-priority: 109
+
+DONE
+root@dorado-ext-leaf1:~# 
