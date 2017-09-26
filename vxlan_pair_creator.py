@@ -108,6 +108,22 @@ run_cmd("switch %s vlan-modify id %s vxlan %s" % (
     g_pair1[0], g_vlan_id, g_vxlan_id))
 print("")
 
+print("Modifying vlan %s with vxlan %s of switch %s" % (
+    g_vlan_id, g_vxlan_id, g_pair1[1]))
+run_cmd("switch %s vlan-modify id %s vxlan %s" % (
+    g_pair1[1], g_vlan_id, g_vxlan_id))
+
+print("Modifying vlan %s with vxlan %s of switch %s" % (
+    g_vlan_id, g_vxlan_id, g_pair2[0]))
+run_cmd("switch %s vlan-modify id %s vxlan %s" % (
+    g_pair2[0], g_vlan_id, g_vxlan_id))
+print("")
+
+print("Modifying vlan %s with vxlan %s of switch %s" % (
+    g_vlan_id, g_vxlan_id, g_pair2[1]))
+run_cmd("switch %s vlan-modify id %s vxlan %s" % (
+    g_pair2[1], g_vlan_id, g_vxlan_id))
+
 # Validate routers
 g_vrouters = []
 vrouter_info = run_cmd("vrouter-show format name parsable-delim ,")
