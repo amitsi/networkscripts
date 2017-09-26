@@ -6,9 +6,6 @@ from __future__ import print_function
 import subprocess
 import argparse
 import time
-import re
-import struct
-import socket
 
 ##################
 # Constants
@@ -139,8 +136,8 @@ for sw in g_pair2:
 #####################VIP INFO###################
 
 vip_info = run_cmd("vrouter-interface-show vrouter-name %s-vrouter "
-                    "vlan %s is-vip true format ip parsable-delim ," % (
-                        g_pair1[0], g_vlan_id))
+                   "vlan %s is-vip true format ip parsable-delim ," % (
+                       g_pair1[0], g_vlan_id))
 g_vip1 = ''
 for vipinfo in vip_info:
     if not vipinfo:
@@ -150,8 +147,8 @@ for vipinfo in vip_info:
     break
 
 vip_info = run_cmd("vrouter-interface-show vrouter-name %s-vrouter "
-                    "vlan %s is-vip true format ip parsable-delim ," % (
-                        g_pair2[0], g_vlan_id))
+                   "vlan %s is-vip true format ip parsable-delim ," % (
+                       g_pair2[0], g_vlan_id))
 g_vip2 = ''
 for vipinfo in vip_info:
     if not vipinfo:
