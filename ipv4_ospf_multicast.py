@@ -24,21 +24,24 @@ parser.add_argument(
 )
 parser.add_argument(
     '-t', '--type',
-    help='IP Type. Defaults to \"ipv4\"',
+    # help='IP Type. Defaults to \"ipv4\"',
+    help=argparse.SUPPRESS,
     choices=["ipv4", "ipv6"],
     required=False,
-    default="ipv4"
+    default="ipv4",
 )
 parser.add_argument(
     '-p', '--prefix',
-    help='IP Prefix. Defaults to \"2607:f4a0:3:0:250:56ff:feac:\" '
-         'or \"192.168.100.\" based on type',
+    # help='IP Prefix. Defaults to \"2607:f4a0:3:0:250:56ff:feac:\" '
+    #      'or \"192.168.100.\" based on type',
+    help='IP Prefix. Defaults to \"104.255.61.\"',
     required=False
 )
 parser.add_argument(
     '-s', '--subnet',
-    help='IP Subnet. Defaults to \"64\", only valid for IPv6',
+    # help='IP Subnet. Defaults to \"64\", only valid for IPv6',
     choices=["64", "126"],
+    help=argparse.SUPPRESS,
     required=False,
     default="64"
 )
@@ -187,6 +190,9 @@ else:
 print("")
 for link in g_l3_links:
     sw1, p1, p2, sw2 = link
+    # Give lower ip to spine node
+    if sw2 in g_spine_list:
+        sw2, p2, p1, sw1 = sw1, p1, p2, sw2
     ip1, ip2 = ip_generator.next().split(',')
     #####vRouter-Interface#####
     print("Adding vRouter interface to vrouter=%s-vrouter port=%s ip=%s/%s..." %
@@ -230,6 +236,9 @@ for link in g_l3_links:
 print("")
 for sws in g_cluster_nodes:
     sw1, sw2 = sws
+    # Give lower ip to spine node
+    if sw2 in g_spine_list:
+        sw1, sw2 = sw2, sw1
     ####Creation cluster VLANs####
     print("Creating VLAN 4040 cluster scope on switches: %s & %s..." % sws,
           end='')
