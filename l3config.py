@@ -41,8 +41,6 @@ args = vars(parser.parse_args())
 if not args['prefix']:
     args['prefix']="2607:f4a0:3:0:250:56ff:feac:" if args['type'] == "ipv6" else "192.168.100."
 
-
-
 ################
 # UTIL FUNCTIONS
 ################
@@ -87,26 +85,16 @@ def run_cmd(cmd):
 
 ################
 
-
-
-
 # Get AS number & Router-ID info
 as_info = {}
 cluster_cmd = "cluster-show format cluster-node-1,cluster-node-2, parsable-delim ,"
 cluster_nodes = []
-cl = run_cmd(cluster_cmd)
-
-if None not in run_cmd(cluster_cmd):
-        print("no cluster present")
-else:
-    for cl in run_cmd(cluster_cmd):
-        cls1,cls2 = cl.split(',')
-        cluster_nodes.append((cls1,cls2))
-        as_info[cls1] = asnum
-        as_info[cls2] = asnum
-        asnum += 1
-
-    print("no cluster")
+for cl in run_cmd(cluster_cmd):
+    cls1,cls2 = cl.split(',')
+    cluster_nodes.append((cls1,cls2))
+    as_info[cls1] = asnum
+    as_info[cls2] = asnum
+    asnum += 1
 rid_info = {}
 fnodes = run_cmd("fabric-node-show format name parsable-delim ,")
 i = 1
@@ -124,35 +112,27 @@ run_cmd("switch \* stp-modify disable")
 # Get Connected Links (not part of cluster)
 links = []
 lldp_cmd = "lldp-show format switch,local-port,port-id,sys-name parsable-delim ,"
-
-if None not in run_cmd(lldp_cmd):
-        print("no lldp output")
-else:
-    for conn in run_cmd(lldp_cmd):
-        sw1,p1,p2,sw2 = conn.split(',')
-        # Skip Clustered links
-        if (sw1,sw2) in cluster_nodes or (sw2,sw1) in cluster_nodes:
-            continue
-        if (sw2,p2,p1,sw1) not in links:
-            links.append((sw1,p1,p2,sw2))
+for conn in run_cmd(lldp_cmd):
+    sw1,p1,p2,sw2 = conn.split(',')
+    # Skip Clustered links
+    if (sw1,sw2) in cluster_nodes or (sw2,sw1) in cluster_nodes:
+        continue
+    if (sw2,p2,p1,sw1) not in links:
+        links.append((sw1,p1,p2,sw2))
 
 # Create vRouters
 sw_cmd = "fabric-node-show format name,fab-name parsable-delim ,"
 sw_details = run_cmd(sw_cmd)
-
-if None not in run_cmd(sw_cmd):
-        print("went in if")
-else:
-    for swinfo in sw_details:
-        swname, fabname = swinfo.split(',')
-        print("Creating vRouter %s-vrouter on %s..." %(swname, swname), end='')
-        sys.stdout.flush()
-        run_cmd("switch %s vrouter-create name %s-vrouter vnet %s-global router-type "
-                "hardware bgp-as %s router-id %s" % (
-                swname,swname,fabname,as_info[swname],rid_info[swname]))
-        print("Done")
-        sys.stdout.flush()
-        time.sleep(20)
+for swinfo in sw_details:
+    swname, fabname = swinfo.split(',')
+    print("Creating vRouter %s-vrouter on %s..." %(swname, swname), end='')
+    sys.stdout.flush()
+    run_cmd("switch %s vrouter-create name %s-vrouter vnet %s-global router-type "
+            "hardware bgp-as %s router-id %s" % (
+            swname,swname,fabname,as_info[swname],rid_info[swname]))
+    print("Done")
+    sys.stdout.flush()
+    time.sleep(20)
 
 # Create L3 interfaces with IPv6 addresssing
 if args['type'] == 'ipv4':
@@ -218,4 +198,3 @@ for link in links:
     print("Done")
     sys.stdout.flush()
     time.sleep(15)
-
