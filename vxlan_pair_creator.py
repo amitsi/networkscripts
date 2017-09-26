@@ -1,18 +1,11 @@
 #!/usr/bin/python
 
-""" PN VRRP Creation """
+""" PN VXLAN PAIR Creation """
 
 from __future__ import print_function
 import subprocess
 import argparse
 import time
-
-##################
-# Constants
-##################
-g_vrrp_id = 15
-g_prim_vrrp_pri = 110
-g_sec_vrrp_pri = 109
 
 ##################
 # ARGUMENT PARSING
