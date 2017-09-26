@@ -7,7 +7,7 @@ import sys
 ##################
 # Constants
 ##################
-g_loopback_ip = "99.99.99."
+g_loopback_ip = "104.255.61."
 g_cluster_vlan = 4040
 ipv6_start = 15360
 ipv6_end = 15480
@@ -31,7 +31,8 @@ parser.add_argument(
 )
 parser.add_argument(
     '-p', '--prefix',
-    help='IP Prefix. Defaults to \"2607:f4a0:3:0:250:56ff:feac:\" or \"192.168.100.\" based on type',
+    help='IP Prefix. Defaults to \"2607:f4a0:3:0:250:56ff:feac:\" '
+         'or \"192.168.100.\" based on type',
     required=False
 )
 parser.add_argument(
@@ -43,7 +44,10 @@ parser.add_argument(
 )
 args = vars(parser.parse_args())
 if not args['prefix']:
-    args['prefix'] = "2607:f4a0:3:0:250:56ff:feac:" if args['type'] == "ipv6" else "192.168.100."
+    if args['type'] == "ipv6":
+        args['prefix'] = "2607:f4a0:3:0:250:56ff:feac:"
+    else:
+        args['prefix'] = "104.255.61."
 
 g_spine_list = [i.strip() for i in args['spine'].split(',')]
 
@@ -64,7 +68,7 @@ def give_ipv6(start, end):
 
 def give_ipv4():
     tag = args['prefix']
-    for i in range(2, 255, 2):
+    for i in range(64, 255, 2):
         yield "%s%s,%s%s" % (tag, i, tag, i + 1)
 
 
@@ -106,15 +110,6 @@ for sw in g_fab_nodes:
     g_rid_info[sw] = g_loopback_ip + str(i)
     i += 1
 
-'''
-# Enable all ports to get better visibility of the topology
-for sw in g_fab_nodes:
-    if sw in g_spine_list:
-        continue
-    run_cmd("switch %s port-config-modify port all enable" %sw)
-time.sleep(5)
-'''
-
 # Get all the connected links - sw1,p1,p2,sw2
 g_main_links = []
 lldp_cmd = "lldp-show format switch,local-port,port-id,sys-name parsable-delim ,"
@@ -127,13 +122,17 @@ for conn in run_cmd(lldp_cmd):
 g_cluster_nodes = set()
 for conn in g_main_links:
     sw1, p1, p2, sw2 = conn
+    # Skip non fabric nodes
+    if sw1 not in g_fab_nodes or sw2 not in g_fab_nodes:
+        continue
     # Disable spine ports
     if sw1 in g_spine_list and sw2 in g_spine_list:
         print("Disabling spine link on %s. Port: %s" % (sw1, p1))
         run_cmd("switch %s port-config-modify port %s disable" % (sw1, p1))
     # Get cluster node list
     if sw1 not in g_spine_list and sw2 not in g_spine_list:
-        if (sw1, sw2) not in g_cluster_nodes and (sw2, sw1) not in g_cluster_nodes:
+        if (sw1, sw2) not in g_cluster_nodes \
+            and (sw2, sw1) not in g_cluster_nodes:
             g_cluster_nodes.add((sw1, sw2))
 
 # Create Clusters
@@ -144,7 +143,8 @@ i = 1
 for c_node in g_cluster_nodes:
     sw1, sw2 = c_node
     print("Creating cluster: cluster-leaf%d between %s & %s" % (i, sw1, sw2))
-    run_cmd("cluster-create name cluster-leaf%d cluster-node-1 %s cluster-node-2 %s" % (i, sw1, sw2))
+    run_cmd("cluster-create name cluster-leaf%d cluster-node-1 %s "
+            "cluster-node-2 %s" % (i, sw1, sw2))
     i += 1
 
 # Get Connected Links (not part of cluster)
@@ -167,8 +167,9 @@ for conn in g_main_links:
 for swname in g_fab_nodes:
     print("Creating vRouter %s-vrouter on %s..." % (swname, swname), end='')
     sys.stdout.flush()
-    run_cmd("switch %s vrouter-create name %s-vrouter vnet %s-global router-type "
-            "hardware router-id %s proto-multi pim-ssm ospf-redistribute connected" % (
+    run_cmd("switch %s vrouter-create name %s-vrouter vnet %s-global "
+            "router-type hardware router-id %s proto-multi pim-ssm "
+            "ospf-redistribute connected" % (
                 swname, swname, g_fab_name, g_rid_info[swname]))
     print("Done")
     sys.stdout.flush()
@@ -192,8 +193,8 @@ for link in g_l3_links:
           (sw1, p1, ip1, netmask), end='')
     sys.stdout.flush()
     run_cmd("switch %s port-config-modify port %s disable" % (sw1, p1))
-    run_cmd("vrouter-interface-add vrouter-name %s-vrouter l3-port %s ip %s/%s " %
-            (sw1, p1, ip1, netmask))
+    run_cmd("vrouter-interface-add vrouter-name %s-vrouter l3-port %s ip "
+            "%s/%s " % (sw1, p1, ip1, netmask))
     run_cmd("switch %s port-config-modify port %s enable" % (sw1, p1))
     print("Done")
     sys.stdout.flush()
@@ -201,8 +202,8 @@ for link in g_l3_links:
     #####OSPF#####
     print("Adding OSPF for vrouter=%s-vrouter ip=%s..." % (sw1, ip1), end='')
     sys.stdout.flush()
-    run_cmd("vrouter-ospf-add vrouter-name %s-vrouter network %s/%s ospf-area 0" %
-            (sw1, ip1, netmask))
+    run_cmd("vrouter-ospf-add vrouter-name %s-vrouter network %s/%s "
+            "ospf-area 0" % (sw1, ip1, netmask))
     print("Done")
     sys.stdout.flush()
     time.sleep(10)
@@ -212,8 +213,8 @@ for link in g_l3_links:
           (sw2, p2, ip2, netmask), end='')
     sys.stdout.flush()
     run_cmd("switch %s port-config-modify port %s disable" % (sw2, p2))
-    run_cmd("vrouter-interface-add vrouter-name %s-vrouter l3-port %s ip %s/%s " %
-            (sw2, p2, ip2, netmask))
+    run_cmd("vrouter-interface-add vrouter-name %s-vrouter l3-port %s ip "
+            "%s/%s " % (sw2, p2, ip2, netmask))
     run_cmd("switch %s port-config-modify port %s enable" % (sw2, p2))
     print("Done")
     sys.stdout.flush()
@@ -221,8 +222,8 @@ for link in g_l3_links:
     #####OSPF#####
     print("Adding OSPF for vrouter=%s-vrouter ip=%s..." % (sw2, ip2), end='')
     sys.stdout.flush()
-    run_cmd("vrouter-ospf-add vrouter-name %s-vrouter network %s/%s ospf-area 0" %
-            (sw2, ip2, netmask))
+    run_cmd("vrouter-ospf-add vrouter-name %s-vrouter network %s/%s "
+            "ospf-area 0" % (sw2, ip2, netmask))
     print("Done")
     sys.stdout.flush()
     time.sleep(10)
@@ -230,7 +231,8 @@ print("")
 for sws in g_cluster_nodes:
     sw1, sw2 = sws
     ####Creation cluster VLANs####
-    print("Creating VLAN 4040 cluster scope on switches: %s & %s..." % sws, end='')
+    print("Creating VLAN 4040 cluster scope on switches: %s & %s..." % sws,
+          end='')
     sys.stdout.flush()
     run_cmd("switch %s vlan-create id %s scope cluster" %
             (sw1, g_cluster_vlan))
@@ -244,16 +246,16 @@ for sws in g_cluster_nodes:
     print("Adding vRouter interface to vrouter=%s-vrouter vlan=%s ip=%s/%s..." %
           (sw1, g_cluster_vlan, ip1, netmask), end='')
     sys.stdout.flush()
-    run_cmd("vrouter-interface-add vrouter-name %s-vrouter vlan %s ip %s/%s pim-cluster" %
-            (sw1, g_cluster_vlan, ip1, netmask))
+    run_cmd("vrouter-interface-add vrouter-name %s-vrouter vlan %s ip %s/%s "
+            "pim-cluster" % (sw1, g_cluster_vlan, ip1, netmask))
     print("Done")
     sys.stdout.flush()
     time.sleep(2)
     #####OSPF#####
     print("Adding OSPF for vrouter=%s-vrouter ip=%s..." % (sw1, ip1), end='')
     sys.stdout.flush()
-    run_cmd("vrouter-ospf-add vrouter-name %s-vrouter network %s/%s ospf-area 0" %
-            (sw1, ip1, netmask))
+    run_cmd("vrouter-ospf-add vrouter-name %s-vrouter network %s/%s "
+            "ospf-area 0" % (sw1, ip1, netmask))
     print("Done")
     sys.stdout.flush()
     time.sleep(5)
@@ -262,16 +264,16 @@ for sws in g_cluster_nodes:
     print("Adding vRouter interface to vrouter=%s-vrouter vlan=%s ip=%s/%s..." %
           (sw2, g_cluster_vlan, ip2, netmask), end='')
     sys.stdout.flush()
-    run_cmd("vrouter-interface-add vrouter-name %s-vrouter vlan %s ip %s/%s pim-cluster" %
-            (sw2, g_cluster_vlan, ip2, netmask))
+    run_cmd("vrouter-interface-add vrouter-name %s-vrouter vlan %s ip %s/%s "
+            "pim-cluster" % (sw2, g_cluster_vlan, ip2, netmask))
     print("Done")
     sys.stdout.flush()
     time.sleep(2)
     #####OSPF#####
     print("Adding OSPF for vrouter=%s-vrouter ip=%s..." % (sw2, ip2), end='')
     sys.stdout.flush()
-    run_cmd("vrouter-ospf-add vrouter-name %s-vrouter network %s/%s ospf-area 0" %
-            (sw2, ip2, netmask))
+    run_cmd("vrouter-ospf-add vrouter-name %s-vrouter network %s/%s "
+            "ospf-area 0" % (sw2, ip2, netmask))
     print("Done")
     sys.stdout.flush()
     time.sleep(5)
