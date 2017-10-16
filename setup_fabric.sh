@@ -3,15 +3,15 @@
 FAIL=0
 
 verizon_switches=(
-	'10.9.31.60'
-	'10.9.31.61'
-	'10.9.31.62'
-	'10.9.31.63'
-	'10.9.31.64'
-	'10.9.31.65'
-	'10.9.31.66'
-	'10.9.31.67'
-	'10.9.31.68'
+        '10.9.31.60'
+        '10.9.31.61'
+        '10.9.31.62'
+        '10.9.31.63'
+        '10.9.31.64'
+        '10.9.31.65'
+        '10.9.31.66'
+        '10.9.31.67'
+        '10.9.31.68'
 )
 ansible_switches=(
 	'10.110.0.160'
@@ -73,17 +73,17 @@ echo "==========================================="
 
 FIRST=0
 for ip in ${switches[@]}; do
-        sshpass -p admin ssh -oStrictHostKeyChecking=no pluribus@$ip cli --quiet --user network-admin:admin --no-login-prompt --script-password switch-setup-modify password test123 eula-accepted true
+        sshpass -p admin ssh -q -oStrictHostKeyChecking=no pluribus@$ip -- --quiet cli --quiet --user network-admin:admin --no-login-prompt --script-password switch-setup-modify password test123 eula-accepted true
         if [[ $? -ne 0 ]]; then
                 echo "Error accepting EULA"
                 echo "Exiting.."
         fi
         sleep 2
         if [[ $FIRST -eq 0 ]]; then
-                sshpass -p test123 ssh -oStrictHostKeyChecking=no network-admin@$ip fabric-create name $fab_name fabric-network mgmt control-network mgmt
+                sshpass -p test123 ssh -q -oStrictHostKeyChecking=no network-admin@$ip -- --quiet fabric-create name $fab_name fabric-network mgmt control-network mgmt
                 sleep 5
         else
-                sshpass -p test123 ssh -oStrictHostKeyChecking=no network-admin@$ip fabric-join name $fab_name 
+                sshpass -p test123 ssh -q -oStrictHostKeyChecking=no network-admin@$ip -- --quiet fabric-join name $fab_name
         fi
         if [[ $? -ne 0 ]]; then
                 echo "Error setting up fabric"
@@ -95,7 +95,7 @@ done
 echo "==========================================="
 echo "All switches are successfully initialised :)"
 echo "==========================================="
-sshpass -p test123 ssh -oStrictHostKeyChecking=no network-admin@$ip fabric-node-show format name,mgmt-ip,state
+sshpass -p test123 ssh -q -oStrictHostKeyChecking=no network-admin@$ip -- --quiet fabric-node-show format name,mgmt-ip,state
 echo "==========================================="
 
 exit 0
