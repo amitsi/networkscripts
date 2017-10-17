@@ -73,7 +73,7 @@ echo "==========================================="
 
 FIRST=0
 for ip in ${switches[@]}; do
-        sshpass -p admin ssh -q -oStrictHostKeyChecking=no pluribus@$ip -- --quiet cli --quiet --user network-admin:admin --no-login-prompt --script-password switch-setup-modify password test123 eula-accepted true
+        sshpass -p admin ssh -q -oStrictHostKeyChecking=no pluribus@$ip cli --quiet --user network-admin:admin --no-login-prompt --script-password switch-setup-modify password test123 eula-accepted true
         if [[ $? -ne 0 ]]; then
                 echo "Error accepting EULA"
                 echo "Exiting.."
