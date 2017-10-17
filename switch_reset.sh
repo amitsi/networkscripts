@@ -66,6 +66,9 @@ echo "Please wait resetting all the switches..."
 echo "==========================================="
 
 for ip in ${switches[@]}; do
+        echo "----------------------------------"
+        echo "Switch : $ip"
+        echo "----------------------------------"
         sshpass -p 'test123' ssh -q -oStrictHostKeyChecking=no network-admin@$ip -- --quiet role-modify name network-admin shell
         sshpass -p 'test123' ssh -q -oStrictHostKeyChecking=no network-admin@$ip -- --quiet role-modify name network-admin sudo
         echo "test123" | sshpass -p test123 ssh -q -oStrictHostKeyChecking=no network-admin@$ip -- --quiet "shell sudo -S -- sh -c 'nvos-reset.ksh -y -z -d && service svc-nvOSd restart'" &
