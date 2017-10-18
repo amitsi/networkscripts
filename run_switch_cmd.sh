@@ -1,7 +1,5 @@
 #!/bin/bash
 
-FAIL=0
-
 verizon_switches=(
 	'10.9.31.60'
 	'10.9.31.61'
@@ -55,37 +53,24 @@ do
         *) echo invalid option;;
     esac
 done
-read -p "Are you sure you want to reset $opt setup? [y|n] = " -r
+read -p "Enter the cmd to run = " -r
 echo    # (optional) move to a new line
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+if [[ -z $REPLY ]]; then
 	exit 0
 fi
-
-echo "==========================================="
-echo "Please wait resetting all the switches..."
-echo "==========================================="
 
 for ip in ${switches[@]}; do
         echo "----------------------------------"
         echo "Switch : $ip"
         echo "----------------------------------"
-        sshpass -p 'test123' ssh -q -oStrictHostKeyChecking=no network-admin@$ip -- --quiet role-modify name network-admin shell
-        sshpass -p 'test123' ssh -q -oStrictHostKeyChecking=no network-admin@$ip -- --quiet role-modify name network-admin sudo
-        echo "test123" | sshpass -p test123 ssh -q -oStrictHostKeyChecking=no network-admin@$ip -- --quiet "shell sudo -S -- sh -c 'nvos-reset.ksh -y -z -d && service svc-nvOSd restart'" &
+	ping -c 1 $ip -W 2 > /dev/null
+	if [[ $? -eq 0 ]]; then
+		sshpass -p 'test123' ssh -q -oStrictHostKeyChecking=no network-admin@$ip -- --quiet "$REPLY"
+	else
+		echo "Switch: $ip is not reachable"
+		echo "----------------------------------"
+	fi
 done
-
-for job in `jobs -p`
-do
-    wait $job || let "FAIL+=1"
-done
-
-echo "==========================================="
-if [ "$FAIL" == "0" ]; then
-	echo "All switches are successfully resetted :)"
-else
-	echo "Some issue. Please try manually !"
-fi
-echo "==========================================="
 
 exit 0
 
