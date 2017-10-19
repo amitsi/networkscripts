@@ -7,9 +7,9 @@ import sys
 ##################
 # Constants
 ##################
-g_loopback_ip = "104.255.61.0"
+g_loopback_ip = "104.255.61.1"
 g_ipv4_start = "104.255.61.64"
-g_ipv6_start = "2607:f4a0:3:0:250:56ff:feac:0"
+g_ipv6_start = "2620:0000:167F:b001::30"
 g_cluster_vlan = 4040
 g_netmask_v4 = 31
 g_netmask_v6 = 127
@@ -188,6 +188,8 @@ for swname in g_fab_nodes:
             "router-type hardware router-id %s proto-multi pim-ssm "
             "ospf-redistribute connected" % (
                 swname, swname, g_fab_name, g_rid_info[swname]))
+    run_cmd("switch %s vrouter-loopback-interface-add vrouter-name %-vrouter "
+            "ip %s" % (swname, swname, g_rid_info[swname]))
     print("Done")
     sys.stdout.flush()
     time.sleep(3)
