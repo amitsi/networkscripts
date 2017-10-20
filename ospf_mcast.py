@@ -188,7 +188,7 @@ for swname in g_fab_nodes:
             "router-type hardware router-id %s proto-multi pim-ssm "
             "ospf-redistribute connected" % (
                 swname, swname, g_fab_name, g_rid_info[swname]))
-    run_cmd("switch %s vrouter-loopback-interface-add vrouter-name %-vrouter "
+    run_cmd("switch %s vrouter-loopback-interface-add vrouter-name %s-vrouter "
             "ip %s" % (swname, swname, g_rid_info[swname]))
     print("Done")
     sys.stdout.flush()
