@@ -156,8 +156,19 @@ for conn in g_main_links:
 if len(g_cluster_nodes) == 0:
     print("No cluster nodes found")
     exit(0)
+
+existing_clusters = []
+cluster_info = run_cmd("cluster-show format cluster-node-1,cluster-node-2 "
+                       "parsable-delim ,")
+for cinfo in cluster_info:
+    if not cinfo:
+        break
+    existing_clusters.append(cinfo)
+
 i = 1
 for c_node in g_cluster_nodes:
+    if c_node in existing_clusters:
+        continue
     sw1, sw2 = c_node
     print("Creating cluster: cluster-leaf%d between %s & %s" % (i, sw1, sw2))
     run_cmd("cluster-create name cluster-leaf%d cluster-node-1 %s "
@@ -180,16 +191,26 @@ for conn in g_main_links:
     if (sw2, p2, p1, sw1) not in g_l3_links:
         g_l3_links.append((sw1, p1, p2, sw2))
 
+existing_vrouters = []
+vrouter_info = run_cmd("vrouter-show format name parsable-delim ,")
+for vinfo in vrouter_info:
+    if not vinfo:
+        break
+    vr_name = vinfo
+    existing_vrouters.append(vr_name)
 # Create vRouters
 for swname in g_fab_nodes:
-    print("Creating vRouter %s-vrouter on %s..." % (swname, swname), end='')
+    vrname = "%s-vrouter" % swname
+    if vrname in existing_vrouters:
+        continue
+    print("Creating vRouter %s on %s..." % (vrname, swname), end='')
     sys.stdout.flush()
-    run_cmd("switch %s vrouter-create name %s-vrouter vnet %s-global "
+    run_cmd("switch %s vrouter-create name %s vnet %s-global "
             "router-type hardware router-id %s proto-multi pim-ssm "
             "ospf-redistribute connected" % (
-                swname, swname, g_fab_name, g_rid_info[swname]))
-    run_cmd("switch %s vrouter-loopback-interface-add vrouter-name %-vrouter "
-            "ip %s" % (swname, swname, g_rid_info[swname]))
+                swname, vrname, g_fab_name, g_rid_info[swname]))
+    run_cmd("switch %s vrouter-loopback-interface-add vrouter-name %s "
+            "ip %s" % (swname, vrname, g_rid_info[swname]))
     print("Done")
     sys.stdout.flush()
     time.sleep(3)
