@@ -337,3 +337,37 @@ if set_ipv6:
         print("Done")
         sys.stdout.flush()
         time.sleep(5)
+
+    v4_interfaces = []
+    int_info = run_cmd("vrouter-interface-show vlan 4040 format nic,ip parsable-delim ,")
+    for v4_int in int_info:
+        if not v4_int:
+            print("No IPv4 iOSPF links configured")
+            exit(0)
+        entry = v4_int.split(',')
+        v4_interfaces.append(v4_int.split(','))
+        v4_interfaces = sorted(v4_interfaces, key=ip_key)
+
+    if not len(v4_interfaces):
+        print("No IPv4 iOSPF links configured")
+        exit(0)
+
+    print("")
+    print("Adding IPv6 interfaces for iOSPF links:")
+    for interface in v4_interfaces:
+        ipaddr = ip_generator.next()
+        vr_name, nic, v4_ip = interface
+        #####vRouter-Interface#####
+        print("Adding vRouter IPv6 interface to vrouter=%s nic=%s ip=%s/%s..." %
+              (vr_name, nic, ipaddr, netmask), end='')
+        run_cmd("vrouter-interface-ip-add vrouter-name %s nic %s ip %s/%s" % (vr_name, nic, ipaddr, netmask))
+        print("Done")
+        sys.stdout.flush()
+        time.sleep(2)
+        #####OSPF#####
+        print("Adding OSPF for IPv6 network on vrouter=%s nic=%s..." % (vr_name, nic), end='')
+        sys.stdout.flush()
+        run_cmd("vrouter-ospf6-add vrouter-name %s nic %s ospf6-area 0.0.0.0" % (vr_name, nic))
+        print("Done")
+        sys.stdout.flush()
+        time.sleep(5)
