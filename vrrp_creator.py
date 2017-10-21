@@ -138,9 +138,6 @@ def validate_ipv6(ip):
     return False
 
 def validate_ipv6_cidr(ip_cidr):
-    #: Regex for validating a CIDR network
-    #CIDR_RE = re.compile(r'^([0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}/\d{1,3}$')
-    #if CIDR_RE.match(ip_cidr):
     ip, mask = ip_cidr.split('/')
     if validate_ipv6(ip):
         if int(mask) > 128:
@@ -148,7 +145,6 @@ def validate_ipv6_cidr(ip_cidr):
     else:
         return False
     return True
-    #return False
 
 g_switch_list = [i.strip() for i in args['switch'].split(',')]
 if len(g_switch_list) != 2:
