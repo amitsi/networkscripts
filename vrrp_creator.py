@@ -37,7 +37,7 @@ parser.add_argument(
 parser.add_argument(
     '--ipv4',
     help='IPv4 address in CIDR notation',
-    required=False
+    required=True
 )
 parser.add_argument(
     '--ipv6',
@@ -490,4 +490,39 @@ if set_ipv6:
     sys.stdout.flush()
     time.sleep(5)
     ############################################################################
-    print("DONE")
+
+# Make VRRP interfaces ospf-passive interface
+for swname in g_switch_list:
+    vrname = "%s-vrouter" % swname
+    pass_intf = run_cmd("switch %s vrouter-interface-config-show vrouter-name "
+                        "%s format nic,ospf-passive-if parsable-delim ," % (
+                            swname, vrname))
+    passv_info = {}
+    for intf in pass_intf:
+        if not intf:
+            break
+        vr,intf_index,passv = intf.split(',')
+        passv_info[intf_index] = passv
+
+    intf_info = run_cmd("switch %s vrouter-interface-show vrouter-name %s "
+                        "vlan %s format nic parsable-delim ," % (
+                            swname, vrname, g_vlan_id))
+    for intf in intf_info:
+        if not intf:
+            print("No router interface exist")
+            exit(0)
+        intf_index = intf.split(',')[1]
+        print("Making interface %s on vrouter=%s ospf-passive interface..." % (
+                  intf_index, vrname), end='')
+        sys.stdout.flush()
+        if intf_index in passv_info:
+            if passv_info[intf_index] == "false":
+                run_cmd("vrouter-interface-config-modify vrouter-name %s nic %s "
+                        "ospf-passive-if" % (vrname, intf_index))
+        else:
+            run_cmd("vrouter-interface-config-add vrouter-name %s nic %s "
+                    "ospf-passive-if" % (vrname, intf_index))
+        print("Done")
+        sys.stdout.flush()
+        time.sleep(2)
+        print("")
