@@ -23,6 +23,7 @@ def is_reachable(vrname, ip_addr):
     message = run_cmd("vrouter-ping vrouter-name %s host-ip %s "
                       "count 1" % (vrname, ip_addr))
 
+    message = '\n'.join(message)
     if ('unreachable' in message or 'Unreachable' in message or
             '100% packet loss' in message):
         return False
