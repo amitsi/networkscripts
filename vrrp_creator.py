@@ -216,9 +216,11 @@ def give_ipv6_ip(ip_cidr):
     host_bits = 128 - int(cidr)
     start = int(hexlify(socket.inet_pton(socket.AF_INET6, ip)), 16)
     end = start | ((1 << host_bits) - 1)
-    for i in range(start, end):
+    i = start
+    while i < end:
         hex_str = '%032x' % i
         hextets = ['%x' % int(hex_str[x:x + 4], 16) for x in range(0, 32, 4)]
+        i += 1
         yield ":".join(hextets) + '/' + cidr
 
 ##################
