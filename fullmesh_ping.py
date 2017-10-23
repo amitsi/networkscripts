@@ -63,6 +63,7 @@ while(True):
     sys.stdout.write("[%s]" % (" " * vrlen))
     sys.stdout.flush()
     sys.stdout.write("\b" * (vrlen+1)) # return to start of line, after '['
+    fail = False
     for vrname in vr_ips:
         sys.stdout.write("-")
         sys.stdout.flush()
@@ -74,6 +75,12 @@ while(True):
                     if not is_reachable(vrname, ip):
                         print("")
                         print(vrname + " ====> " + ip + " = Unreachable")
+                        fail = True
                     time.sleep(1)
+    if fail:
+        print("")
+    else:
+        print("]")
     print("Waiting for %s minutes" % g_ping_interval)
+    sys.stdout.flush()
     time.sleep(60*g_ping_interval)
