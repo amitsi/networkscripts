@@ -16,8 +16,10 @@ g_jumbo_mtu = True
 ####################
 # Static Constants
 ####################
+# Supported v4 subnet: 31
 g_netmask_v4 = 31
-g_netmask_v6 = 127
+# Supported v6 subnets: 126 | 127
+g_netmask_v6 = 126
 
 ##################
 # ARGUMENT PARSING
@@ -80,11 +82,22 @@ def give_ipv6():
         exit(0)
     istart = int(lastoct, 16)
     iend = int('ffff', 16)
-    for i in range(istart, iend):
-        yield "%s:%.4x" % (ipprefix, i)
+    if g_netmask_v6 == 127:
+        for i in range(istart, iend):
+            yield "%s:%.4x" % (ipprefix, i)
+    elif g_netmask_v6 == 126:
+        for i in range(istart, iend, 4):
+            for j in [1,2]:
+                yield "%s:%.4x" % (ipprefix, i+j)
+    else:
+        print("Unsupported IPv6 subnet, valid values are 126 & 127")
+        exit(0)
 
 
 def give_ipv4():
+    if g_netmask_v4 != 31:
+        print("Unsupported IPv4 subnet, valid value is 31")
+        exit(0)
     ip_split = g_ipv4_start.split('.')
     ipprefix = '.'.join(ip_split[:-1])
     lastoct = int(ip_split[-1])
