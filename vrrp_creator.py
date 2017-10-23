@@ -18,6 +18,7 @@ import socket
 g_vrrp_id = 15
 g_prim_vrrp_pri = 110
 g_sec_vrrp_pri = 109
+g_jumbo_mtu = True
 
 ##################
 # ARGUMENT PARSING
@@ -45,6 +46,11 @@ parser.add_argument(
     required=False
 )
 args = vars(parser.parse_args())
+
+if g_jumbo_mtu:
+    g_mtu = 9216
+else:
+    g_mtu = 1500
 
 ##################
 # VALIDATIONs
@@ -291,7 +297,7 @@ if set_ipv4:
     print("Creating interface with sw: %s, ip: %s, vlan-id: %s" % (
         g_switch_list[0], ip1, g_vlan_id))
     run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s if "
-            "data" % (vrname1, ip1, g_vlan_id))
+            "data mtu %s" % (vrname1, ip1, g_vlan_id, g_mtu))
 
     time.sleep(2)
     print("")
@@ -310,9 +316,9 @@ if set_ipv4:
           "vrrp-id: %s, vrrp-priority: %s" % (g_switch_list[0], vip, g_vlan_id,
                                               g_vrrp_id, g_prim_vrrp_pri))
     run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s "
-            "if data vrrp-id %s vrrp-primary %s vrrp-priority %s" % (
+            "if data vrrp-id %s vrrp-primary %s vrrp-priority %s mtu %s" % (
                 vrname1, vip, g_vlan_id, g_vrrp_id, pintf_index,
-                g_prim_vrrp_pri))
+                g_prim_vrrp_pri, g_mtu))
 
     time.sleep(2)
     print("")
@@ -330,7 +336,7 @@ if set_ipv4:
     print("Creating interface with sw: %s, ip: %s, vlan-id: %s" % (
         g_switch_list[1], ip2, g_vlan_id))
     run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s "
-            "if data" % (vrname2, ip2, g_vlan_id))
+            "if data mtu %s" % (vrname2, ip2, g_vlan_id, g_mtu))
 
     time.sleep(2)
     print("")
@@ -349,9 +355,9 @@ if set_ipv4:
           "vrrp-id: %s, vrrp-priority: %s" % (g_switch_list[1], vip, g_vlan_id,
                                               g_vrrp_id, g_sec_vrrp_pri))
     run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s if data "
-            "vrrp-id %s vrrp-primary %s vrrp-priority %s" % (
+            "vrrp-id %s vrrp-primary %s vrrp-priority %s mtu %s" % (
                 vrname2, vip, g_vlan_id, g_vrrp_id, sintf_index,
-                g_sec_vrrp_pri))
+                g_sec_vrrp_pri, g_mtu))
 
     time.sleep(2)
     print("")
@@ -426,18 +432,18 @@ if set_ipv6:
           "vrrp-id: %s, vrrp-priority: %s" % (g_switch_list[0], vip, g_vlan_id,
                                               g_vrrp_id, g_prim_vrrp_pri))
     run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s "
-            "if data vrrp-id %s vrrp-primary %s vrrp-priority %s" % (
+            "if data vrrp-id %s vrrp-primary %s vrrp-priority %s mtu %s" % (
                 vrname1, vip, g_vlan_id, g_vrrp_id, pintf_index,
-                g_prim_vrrp_pri))
+                g_prim_vrrp_pri, g_mtu))
 
     time.sleep(2)
     print("")
     ########################-OSFP-##############################################
     print("Adding OSPF for IPv6 network on vrouter=%s nic=%s..." % (
-              vrname1, intf_index), end='')
+              vrname1, pintf_index), end='')
     sys.stdout.flush()
     run_cmd("vrouter-ospf6-add vrouter-name %s nic %s ospf6-area 0.0.0.0" % (
-                vrname1, intf_index))
+                vrname1, pintf_index))
     print("Done")
     sys.stdout.flush()
     time.sleep(5)
@@ -474,18 +480,18 @@ if set_ipv6:
           "vrrp-id: %s, vrrp-priority: %s" % (g_switch_list[1], vip, g_vlan_id,
                                               g_vrrp_id, g_sec_vrrp_pri))
     run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s if data "
-            "vrrp-id %s vrrp-primary %s vrrp-priority %s" % (
+            "vrrp-id %s vrrp-primary %s vrrp-priority %s mtu %s" % (
                 vrname2, vip, g_vlan_id, g_vrrp_id, sintf_index,
-                g_sec_vrrp_pri))
+                g_sec_vrrp_pri, g_mtu))
 
     time.sleep(2)
     print("")
     ########################-OSFP-##############################################
     print("Adding OSPF for IPv6 network on vrouter=%s nic=%s..." % (
-              vrname2, intf_index), end='')
+              vrname2, sintf_index), end='')
     sys.stdout.flush()
     run_cmd("vrouter-ospf6-add vrouter-name %s nic %s ospf6-area 0.0.0.0" % (
-                vrname2, intf_index))
+                vrname2, sintf_index))
     print("Done")
     sys.stdout.flush()
     time.sleep(5)
