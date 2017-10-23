@@ -8,8 +8,8 @@ import sys
 # Dynamic Constants
 ####################
 g_loopback_ip = "104.255.61.1"
-g_ipv4_start = "104.255.61.64"
-g_ipv6_start = "2620:0000:167F:b001::30"
+g_ipv4_start = "104.255.61.68"
+g_ipv6_start = "2620:0000:167F:b001::40"
 g_cluster_vlan = 4040
 g_jumbo_mtu = True
 
@@ -143,6 +143,7 @@ if g_jumbo_mtu:
     port_info = run_cmd("port-config-show format jumbo parsable-delim ,")
     if not port_info[0] == "on":
         print("Enabling jumbo frames on all ports...", end='')
+        sys.stdout.flush()
         run_cmd("switch \* port-config-modify port all disable")
         time.sleep(2)
         run_cmd("switch \* port-config-modify port all jumbo")
