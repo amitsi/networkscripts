@@ -4,13 +4,18 @@ import argparse
 import time
 import sys
 
-##################
-# Constants
-##################
+####################
+# Dynamic Constants
+####################
 g_loopback_ip = "104.255.61.1"
 g_ipv4_start = "104.255.61.64"
 g_ipv6_start = "2620:0000:167F:b001::30"
 g_cluster_vlan = 4040
+g_jumbo_mtu = True
+
+####################
+# Static Constants
+####################
 g_netmask_v4 = 31
 g_netmask_v6 = 127
 
@@ -18,7 +23,7 @@ g_netmask_v6 = 127
 # ARGUMENT PARSING
 ##################
 
-parser = argparse.ArgumentParser(description='Setup IPv4 L3 OSPF Network')
+parser = argparse.ArgumentParser(description='Setup IPv4/v6 OSPF Mcast Network')
 parser.add_argument(
     '-S', '--spine',
     help='list of spines separated by comma',
@@ -26,10 +31,12 @@ parser.add_argument(
 )
 parser.add_argument(
     '--ipv4',
+    help='configure ipv4 network',
     action='store_true'
 )
 parser.add_argument(
     '--ipv6',
+    help='configure ipv6 network on top of ipv4',
     action='store_true'
 )
 args = vars(parser.parse_args())
@@ -42,6 +49,10 @@ if args['ipv6']:
     set_ipv6 = True
 
 g_spine_list = [i.strip() for i in args['spine'].split(',')]
+if g_jumbo_mtu:
+    g_mtu = 9216
+else:
+    g_mtu = 1500
 
 ################
 # UTIL FUNCTIONS
@@ -127,6 +138,20 @@ for sw in g_fab_nodes:
     g_rid_info[sw] = loopback_gen.next()
     i += 1
 
+# Enable jumbo frames on all ports
+if g_jumbo_mtu:
+    port_info = run_cmd("port-config-show format jumbo parsable-delim ,")
+    if not port_info[0] == "on":
+        print("Enabling jumbo frames on all ports...", end='')
+        run_cmd("switch \* port-config-modify port all disable")
+        time.sleep(2)
+        run_cmd("switch \* port-config-modify port all jumbo")
+        time.sleep(2)
+        run_cmd("switch \* port-config-modify port all enable")
+        time.sleep(5)
+        print("Done")
+        sys.stdout.flush()
+
 # Get all the connected links - sw1,p1,p2,sw2
 g_main_links = []
 lldp_cmd = "lldp-show format switch,local-port,port-id,sys-name parsable-delim ,"
@@ -163,7 +188,8 @@ cluster_info = run_cmd("cluster-show format cluster-node-1,cluster-node-2 "
 for cinfo in cluster_info:
     if not cinfo:
         break
-    existing_clusters.append(cinfo)
+    nodes = cinfo.split(",")
+    existing_clusters.append(tuple(nodes))
 
 i = 1
 for c_node in g_cluster_nodes:
@@ -207,13 +233,22 @@ for swname in g_fab_nodes:
     sys.stdout.flush()
     run_cmd("switch %s vrouter-create name %s vnet %s-global "
             "router-type hardware router-id %s proto-multi pim-ssm "
-            "ospf-redistribute connected" % (
+            "ospf-redistribute none" % (
                 swname, vrname, g_fab_name, g_rid_info[swname]))
-    run_cmd("switch %s vrouter-loopback-interface-add vrouter-name %s "
-            "ip %s" % (swname, vrname, g_rid_info[swname]))
+    time.sleep(1)
     print("Done")
     sys.stdout.flush()
+    print("Adding loopback interface %s on %s..." % (
+            g_rid_info[swname], vrname), end='')
+    sys.stdout.flush()
+    run_cmd("switch %s vrouter-loopback-interface-add vrouter-name %s "
+            "ip %s" % (swname, vrname, g_rid_info[swname]))
+    time.sleep(1)
+    run_cmd("vrouter-ospf-add vrouter-name %s network %s/%s "
+            "ospf-area 0" % (vrname, g_rid_info[swname], 32))
     time.sleep(3)
+    print("Done")
+    sys.stdout.flush()
 
 # Create L3 interfaces with IPv4 addresssing
 if set_ipv4:
@@ -228,12 +263,12 @@ if set_ipv4:
             sw2, p2, p1, sw1 = sw1, p1, p2, sw2
         ip1, ip2 = ip_generator.next().split(',')
         #####vRouter-Interface#####
-        print("Adding vRouter interface to vrouter=%s-vrouter port=%s ip=%s/%s..." %
-              (sw1, p1, ip1, netmask), end='')
+        print("Adding vRouter interface to vrouter=%s-vrouter port=%s "
+              "ip=%s/%s..." % (sw1, p1, ip1, netmask), end='')
         sys.stdout.flush()
         run_cmd("switch %s port-config-modify port %s disable" % (sw1, p1))
         run_cmd("vrouter-interface-add vrouter-name %s-vrouter l3-port %s ip "
-                "%s/%s " % (sw1, p1, ip1, netmask))
+                "%s/%s mtu %s" % (sw1, p1, ip1, netmask, g_mtu))
         run_cmd("switch %s port-config-modify port %s enable" % (sw1, p1))
         print("Done")
         sys.stdout.flush()
@@ -248,12 +283,12 @@ if set_ipv4:
         time.sleep(5)
         ########################################
         #####vRouter-Interface#####
-        print("Adding vRouter interface to vrouter=%s-vrouter port=%s ip=%s/%s..." %
-              (sw2, p2, ip2, netmask), end='')
+        print("Adding vRouter interface to vrouter=%s-vrouter port=%s "
+              "ip=%s/%s..." % (sw2, p2, ip2, netmask), end='')
         sys.stdout.flush()
         run_cmd("switch %s port-config-modify port %s disable" % (sw2, p2))
         run_cmd("vrouter-interface-add vrouter-name %s-vrouter l3-port %s ip "
-                "%s/%s " % (sw2, p2, ip2, netmask))
+                "%s/%s mtu %s" % (sw2, p2, ip2, netmask, g_mtu))
         run_cmd("switch %s port-config-modify port %s enable" % (sw2, p2))
         print("Done")
         sys.stdout.flush()
@@ -286,11 +321,12 @@ if set_ipv4:
         ip1, ip2 = ip_generator.next().split(',')
         ########################################
         #####vRouter-Interface#####
-        print("Adding vRouter interface to vrouter=%s-vrouter vlan=%s ip=%s/%s..." %
-              (sw1, g_cluster_vlan, ip1, netmask), end='')
+        print("Adding vRouter interface to vrouter=%s-vrouter vlan=%s "
+              "ip=%s/%s..." % (sw1, g_cluster_vlan, ip1, netmask), end='')
         sys.stdout.flush()
-        run_cmd("vrouter-interface-add vrouter-name %s-vrouter vlan %s ip %s/%s "
-                "pim-cluster" % (sw1, g_cluster_vlan, ip1, netmask))
+        run_cmd("vrouter-interface-add vrouter-name %s-vrouter vlan %s "
+                "ip %s/%s pim-cluster mtu %s" % (
+                    sw1, g_cluster_vlan, ip1, netmask, g_mtu))
         print("Done")
         sys.stdout.flush()
         time.sleep(2)
@@ -304,11 +340,13 @@ if set_ipv4:
         time.sleep(5)
         ########################################
         #####vRouter-Interface#####
-        print("Adding vRouter interface to vrouter=%s-vrouter vlan=%s ip=%s/%s..." %
+        print("Adding vRouter interface to vrouter=%s-vrouter vlan=%s "
+              "ip=%s/%s..." %
               (sw2, g_cluster_vlan, ip2, netmask), end='')
         sys.stdout.flush()
-        run_cmd("vrouter-interface-add vrouter-name %s-vrouter vlan %s ip %s/%s "
-                "pim-cluster" % (sw2, g_cluster_vlan, ip2, netmask))
+        run_cmd("vrouter-interface-add vrouter-name %s-vrouter vlan %s "
+                "ip %s/%s pim-cluster mtu %s" % (
+                    sw2, g_cluster_vlan, ip2, netmask, g_mtu))
         print("Done")
         sys.stdout.flush()
         time.sleep(2)
@@ -325,7 +363,8 @@ if set_ipv4:
 # Create L3 interfaces with IPv6 addresssing
 if set_ipv6:
     v4_interfaces = []
-    int_info = run_cmd("vrouter-interface-show format nic,l3-port,ip parsable-delim ,")
+    int_info = run_cmd("vrouter-interface-show format nic,l3-port,ip "
+                       "parsable-delim ,")
     for v4_int in int_info:
         if not v4_int:
             print("No IPv4 interfaces configured")
@@ -347,20 +386,24 @@ if set_ipv6:
         #####vRouter-Interface#####
         print("Adding vRouter IPv6 interface to vrouter=%s nic=%s ip=%s/%s..." %
               (vr_name, nic, ipaddr, netmask), end='')
-        run_cmd("vrouter-interface-ip-add vrouter-name %s nic %s ip %s/%s" % (vr_name, nic, ipaddr, netmask))
+        run_cmd("vrouter-interface-ip-add vrouter-name %s nic %s ip "
+                "%s/%s" % (vr_name, nic, ipaddr, netmask))
         print("Done")
         sys.stdout.flush()
         time.sleep(2)
         #####OSPF#####
-        print("Adding OSPF for IPv6 network on vrouter=%s nic=%s..." % (vr_name, nic), end='')
+        print("Adding OSPF for IPv6 network on vrouter=%s "
+              "nic=%s..." % (vr_name, nic), end='')
         sys.stdout.flush()
-        run_cmd("vrouter-ospf6-add vrouter-name %s nic %s ospf6-area 0.0.0.0" % (vr_name, nic))
+        run_cmd("vrouter-ospf6-add vrouter-name %s nic %s "
+                "ospf6-area 0.0.0.0" % (vr_name, nic))
         print("Done")
         sys.stdout.flush()
         time.sleep(5)
 
     v4_interfaces = []
-    int_info = run_cmd("vrouter-interface-show vlan 4040 format nic,ip parsable-delim ,")
+    int_info = run_cmd("vrouter-interface-show vlan 4040 format nic,ip "
+                       "parsable-delim ,")
     for v4_int in int_info:
         if not v4_int:
             print("No IPv4 iOSPF links configured")
@@ -381,14 +424,17 @@ if set_ipv6:
         #####vRouter-Interface#####
         print("Adding vRouter IPv6 interface to vrouter=%s nic=%s ip=%s/%s..." %
               (vr_name, nic, ipaddr, netmask), end='')
-        run_cmd("vrouter-interface-ip-add vrouter-name %s nic %s ip %s/%s" % (vr_name, nic, ipaddr, netmask))
+        run_cmd("vrouter-interface-ip-add vrouter-name %s nic %s ip "
+                "%s/%s" % (vr_name, nic, ipaddr, netmask))
         print("Done")
         sys.stdout.flush()
         time.sleep(2)
         #####OSPF#####
-        print("Adding OSPF for IPv6 network on vrouter=%s nic=%s..." % (vr_name, nic), end='')
+        print("Adding OSPF for IPv6 network on vrouter=%s "
+              "nic=%s..." % (vr_name, nic), end='')
         sys.stdout.flush()
-        run_cmd("vrouter-ospf6-add vrouter-name %s nic %s ospf6-area 0.0.0.0" % (vr_name, nic))
+        run_cmd("vrouter-ospf6-add vrouter-name %s nic %s "
+                "ospf6-area 0.0.0.0" % (vr_name, nic))
         print("Done")
         sys.stdout.flush()
         time.sleep(5)
