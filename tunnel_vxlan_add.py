@@ -120,7 +120,7 @@ for pair in g_pairs:
 print("")
 
 tun_info = run_cmd("tunnel-show format name,vrouter-name,peer-vrouter-name "
-        "parsable-delim , scope cluster")
+        "parsable-delim ,")
 for tuninfo in tun_info:
     if not tuninfo:
         print("No tunnels found")
@@ -128,12 +128,13 @@ for tuninfo in tun_info:
     tunname, vr1, vr2 = tuninfo.split(',')
     found1, found2 = False, False
     for pair in g_pairs: 
-        if vr1 in pair:
+        if vr1.strip("-vrouter") in pair:
             found1 = True
-        if vr2 in pair:
+        if vr2.strip("-vrouter") in pair:
             found2 = True
     if found1 and found2:
         print("Adding vxlan %s to tunnel %s" % (g_vxlan_id, tunname))
-        run_cmd("tunnel-vxlan-add name %s vxlan %s" % (tunname, g_vxlan_id))
+        run_cmd("switch %s tunnel-vxlan-add name %s "
+                "vxlan %s" % (vr1.strip("-vrouter"), tunname, g_vxlan_id))
 
 ################################################
