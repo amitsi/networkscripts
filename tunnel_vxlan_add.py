@@ -26,11 +26,6 @@ parser.add_argument(
     help='VXLAN ID',
     required=True
 )
-parser.add_argument(
-    '-l', '--lo',
-    help='loopback port',
-    required=True
-)
 args = vars(parser.parse_args())
 
 ##################
@@ -59,11 +54,6 @@ if not g_vlan_id.isdigit() or int(g_vlan_id) not in range(0, 4095):
 g_vxlan_id = args['vxlan']
 if not g_vxlan_id.isdigit() or int(g_vxlan_id) not in range(0, 16777215):
     print("VXLAN ID is incorrect")
-    exit(0)
-
-g_lport = args['lo']
-if not g_lport.isdigit():
-    print("Loopback port is incorrect")
     exit(0)
 
 ##################
