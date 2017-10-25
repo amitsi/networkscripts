@@ -1,3 +1,4 @@
+#python all_v6_ospf.py -s ansible-spine1,ansible-spine2
 from __future__ import print_function
 import subprocess
 import argparse
