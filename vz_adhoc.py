@@ -206,11 +206,15 @@ for vipinfo in vip_info:
         exit(0)
     vrname,vip = vipinfo.split(',')
     vip = vip.split('/')[0]
+    if len(vip) > 15:
+        # Skip IPv6 Addresses
+        continue
     if vip not in g_vip_list:
         g_vip_list[vip] = vrname[:-8]
 
 for spine_ip in g_spine_ip:
     spine, ip = spine_ip[0], spine_ip[1]
+    ip = ip.split('/')[0]
     print("Configuring VXLAN tunnels for Spine: %s" % spine)
     for vip in g_vip_list:
         leaf_sw = g_vip_list[vip]
