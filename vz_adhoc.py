@@ -206,6 +206,9 @@ for vipinfo in vip_info:
         exit(0)
     vrname,vip = vipinfo.split(',')
     vip = vip.split('/')[0]
+    if len(vip) > 15:
+        # Skip IPv6 Addresses
+        continue
     if vip not in g_vip_list:
         g_vip_list[vip] = vrname[:-8]
 
