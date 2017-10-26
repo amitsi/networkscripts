@@ -59,11 +59,11 @@ vrouter-interface-add vrouter-name hmplabpsq-we50400-vrouter ip 104.255.62.47/27
 vrouter-interface-add vrouter-name hmplabpsq-we50500-vrouter ip 104.255.62.48/27 ip2 2620:0000:167F:b010::18/64 vlan 610
 vrouter-interface-add vrouter-name hmplabpsq-we50600-vrouter ip 104.255.62.49/27 ip2 2620:0000:167F:b010::19/64 vlan 610
 
-switch hmplabpsq-we50500 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50500-vrouter ip 104.255.62.40/27
-switch hmplabpsq-we50500 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50500-vrouter ip 2620:0000:167F:b010::10/64
+switch hmplabpsq-we50500 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50500-vrouter network 104.255.62.40/27
+switch hmplabpsq-we50500 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50500-vrouter network 2620:0000:167F:b010::10/64
 
-switch hmplabpsq-we50600 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50600-vrouter ip 104.255.62.40/27
-switch hmplabpsq-we50600 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50600-vrouter ip 2620:0000:167F:b010::10/64
+switch hmplabpsq-we50600 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50600-vrouter network 104.255.62.40/27
+switch hmplabpsq-we50600 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50600-vrouter network 2620:0000:167F:b010::10/64
 
 vrouter-loopback-interface-add vrouter-name hmplabpsq-we60100-vrouter ip 2620:0000:167F:b000::10
 vrouter-loopback-interface-add vrouter-name hmplabpsq-we60200-vrouter ip 2620:0000:167F:b000::11
