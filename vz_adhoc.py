@@ -223,6 +223,10 @@ if g_tunnel:
                     g_spine_vxlan_vlan))
         run_cmd("vrouter-interface-add vrouter-name %s-vrouter ip %s vlan %s" % (
                     spine, ip, g_spine_vxlan_vlan))
+        print("Adding IP %s to OSPF for vrouter %s-vrouter" % (ip, spine))
+        run_cmd("vrouter-ospf-add vrouter-name %s-vrouter network %s "
+                "ospf-area 0" % (spine, ip))
+        sleep(5)
     print("")
 
     vip_info = run_cmd("vrouter-interface-show vlan %s is-vip true format ip "
