@@ -138,16 +138,16 @@ if not validate_ipv4(args['ip2']):
 ##################
 
 def run_cmd(cmd):
-    cmd = "cli --quiet --no-login-prompt --user network-admin:test123 " + cmd
+    m_cmd = "cli --quiet --no-login-prompt --user network-admin:test123 " + cmd
     if show_only and "-show" not in cmd:
-        print(cmd)
+        print(">>> " + cmd)
         return
     try:
-        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        proc = subprocess.Popen(m_cmd, shell=True, stdout=subprocess.PIPE)
         output = proc.communicate()[0]
         return output.strip().split('\n')
     except:
-        print("Failed running cmd %s" % cmd)
+        print("Failed running cmd %s" % m_cmd)
         exit(0)
 
 def sleep(sec):
@@ -176,6 +176,7 @@ if g_spine2 not in g_fab_nodes:
 
 ######### Running PRE Commands ####################
 for cmd in pre_cmds.split("\n"):
+    cmd = cmd.strip()
     if not cmd:
         continue
     print("Running cmd: %s" % cmd)
@@ -293,7 +294,7 @@ for vlan in g_vlan_list:
         sleep(1)
     print("")
 
-######### Running PRE Commands ####################
+######### Running POST Commands ####################
 for cmd in post_cmds.split("\n"):
     cmd = cmd.strip()
     if not cmd:
