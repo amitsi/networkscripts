@@ -59,11 +59,11 @@ vrouter-interface-add vrouter-name hmplabpsq-we50400-vrouter ip 104.255.62.47/27
 vrouter-interface-add vrouter-name hmplabpsq-we50500-vrouter ip 104.255.62.48/27 ip2 2620:0000:167F:b010::18/64 vlan 610
 vrouter-interface-add vrouter-name hmplabpsq-we50600-vrouter ip 104.255.62.49/27 ip2 2620:0000:167F:b010::19/64 vlan 610
 
-switch hmplabpsq-we50500 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50500-vrouter ip 104.255.62.40/27
-switch hmplabpsq-we50500 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50500-vrouter ip 2620:0000:167F:b010::10/64
+switch hmplabpsq-we50500 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50500-vrouter network 104.255.62.40/27
+switch hmplabpsq-we50500 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50500-vrouter network 2620:0000:167F:b010::10/64
 
-switch hmplabpsq-we50600 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50600-vrouter ip 104.255.62.40/27
-switch hmplabpsq-we50600 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50600-vrouter ip 2620:0000:167F:b010::10/64
+switch hmplabpsq-we50600 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50600-vrouter network 104.255.62.40/27
+switch hmplabpsq-we50600 vrouter-bgp-network-remove vrouter-name hmplabpsq-we50600-vrouter network 2620:0000:167F:b010::10/64
 
 vrouter-loopback-interface-add vrouter-name hmplabpsq-we60100-vrouter ip 2620:0000:167F:b000::10
 vrouter-loopback-interface-add vrouter-name hmplabpsq-we60200-vrouter ip 2620:0000:167F:b000::11
@@ -237,8 +237,12 @@ if g_tunnel:
         if len(vip) > 15:
             # Skip IPv6 Addresses
             continue
+        sw_name = vrname[:-8]
         if vip not in g_vip_list:
-            g_vip_list[vip] = vrname[:-8]
+            g_vip_list[vip] = sw_name
+        else:
+            if sw_name < g_vip_list[vip]:
+                g_vip_list[vip] = sw_name
 
     for spine_ip in g_spine_ip:
         spine, ip = spine_ip[0], spine_ip[1]
