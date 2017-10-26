@@ -11,7 +11,6 @@ import re
 ##################
 g_vlan_list = [610, 241, 242, 243]
 g_spine_vxlan_vlan = 490
-g_spine_vxlan = 4900
 
 ##################
 # CMDS
@@ -227,10 +226,6 @@ for spine_ip in g_spine_ip:
                     leaf_sw, tun_name, vip,
                     ip, leaf_sw, spine))
         sleep(2)
-        print("Adding vxlan id %s" % g_spine_vxlan)
-        run_cmd("switch %s tunnel-vxlan-add name %s vxlan %s" % (
-            leaf_sw, tun_name, g_spine_vxlan))
-        sleep(2)
         tun_name = spine + "-to-" + leaf_sw + "-pair"
         print("Creating tunnel %s from IP: %s to VIP: %s" % (
                 tun_name, ip, vip))
@@ -240,9 +235,6 @@ for spine_ip in g_spine_ip:
                     spine, tun_name, ip,
                     vip, spine, leaf_sw))
         sleep(2)
-        print("Adding vxlan id %s" % g_spine_vxlan)
-        run_cmd("switch %s tunnel-vxlan-add name %s vxlan %s" % (
-            spine, tun_name, g_spine_vxlan))
 
     print("")
 print("Modifying all trunk to have vxlan loopback port as 47")
