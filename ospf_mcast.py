@@ -41,6 +41,12 @@ parser.add_argument(
     help='configure ipv6 network on top of ipv4',
     action='store_true'
 )
+parser.add_argument(
+    '--show-only',
+    help='will show commands it will run',
+    action='store_true',
+    required=False
+)
 args = vars(parser.parse_args())
 
 set_ipv4 = False
@@ -49,6 +55,7 @@ if args['ipv4']:
     set_ipv4 = True
 if args['ipv6']:
     set_ipv6 = True
+show_only = args["show_only"]
 
 g_spine_list = [i.strip() for i in args['spine'].split(',')]
 if g_jumbo_mtu:
@@ -114,14 +121,22 @@ def give_loopback_v4():
 
 
 def run_cmd(cmd):
-    cmd = "cli --quiet --no-login-prompt --user network-admin:test123 " + cmd
+    m_cmd = "cli --quiet --no-login-prompt --user network-admin:test123 " + cmd
+    if show_only and "-show" not in cmd:
+        print(">>> " + cmd)
+        return
     try:
-        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        proc = subprocess.Popen(m_cmd, shell=True, stdout=subprocess.PIPE)
         output = proc.communicate()[0]
         return output.strip().split('\n')
     except:
-        print("Failed running cmd %s" % cmd)
+        print("Failed running cmd %s" % m_cmd)
         exit(0)
+
+
+def sleep(sec):
+    if not show_only:
+        time.sleep(sec)
 
 ################
 
@@ -158,11 +173,11 @@ if g_jumbo_mtu:
         print("Enabling jumbo frames on all ports...", end='')
         sys.stdout.flush()
         run_cmd("switch \* port-config-modify port all disable")
-        time.sleep(2)
+        sleep(2)
         run_cmd("switch \* port-config-modify port all jumbo")
-        time.sleep(2)
+        sleep(2)
         run_cmd("switch \* port-config-modify port all enable")
-        time.sleep(5)
+        sleep(5)
         print("Done")
         sys.stdout.flush()
 
@@ -249,7 +264,7 @@ for swname in g_fab_nodes:
             "router-type hardware router-id %s proto-multi pim-ssm "
             "ospf-redistribute none" % (
                 swname, vrname, g_fab_name, g_rid_info[swname]))
-    time.sleep(1)
+    sleep(1)
     print("Done")
     sys.stdout.flush()
     print("Adding loopback interface %s on %s..." % (
@@ -257,10 +272,10 @@ for swname in g_fab_nodes:
     sys.stdout.flush()
     run_cmd("switch %s vrouter-loopback-interface-add vrouter-name %s "
             "ip %s" % (swname, vrname, g_rid_info[swname]))
-    time.sleep(1)
+    sleep(1)
     run_cmd("vrouter-ospf-add vrouter-name %s network %s/%s "
             "ospf-area 0" % (vrname, g_rid_info[swname], 32))
-    time.sleep(3)
+    sleep(3)
     print("Done")
     sys.stdout.flush()
 
@@ -286,7 +301,7 @@ if set_ipv4:
         run_cmd("switch %s port-config-modify port %s enable" % (sw1, p1))
         print("Done")
         sys.stdout.flush()
-        time.sleep(2)
+        sleep(2)
         #####OSPF#####
         print("Adding OSPF for vrouter=%s-vrouter ip=%s..." % (sw1, ip1), end='')
         sys.stdout.flush()
@@ -294,7 +309,7 @@ if set_ipv4:
                 "ospf-area 0" % (sw1, ip1, netmask))
         print("Done")
         sys.stdout.flush()
-        time.sleep(5)
+        sleep(5)
         ########################################
         #####vRouter-Interface#####
         print("Adding vRouter interface to vrouter=%s-vrouter port=%s "
@@ -306,7 +321,7 @@ if set_ipv4:
         run_cmd("switch %s port-config-modify port %s enable" % (sw2, p2))
         print("Done")
         sys.stdout.flush()
-        time.sleep(2)
+        sleep(2)
         #####OSPF#####
         print("Adding OSPF for vrouter=%s-vrouter ip=%s..." % (sw2, ip2), end='')
         sys.stdout.flush()
@@ -314,7 +329,7 @@ if set_ipv4:
                 "ospf-area 0" % (sw2, ip2, netmask))
         print("Done")
         sys.stdout.flush()
-        time.sleep(5)
+        sleep(5)
 
     print("")
     for sws in g_cluster_nodes:
@@ -330,7 +345,7 @@ if set_ipv4:
                 (sw1, g_cluster_vlan))
         print("Done")
         sys.stdout.flush()
-        time.sleep(1)
+        sleep(1)
         ########################################
         ip1, ip2 = ip_generator.next().split(',')
         ########################################
@@ -343,7 +358,7 @@ if set_ipv4:
                     sw1, g_cluster_vlan, ip1, netmask, g_mtu))
         print("Done")
         sys.stdout.flush()
-        time.sleep(2)
+        sleep(2)
         #####OSPF#####
         print("Adding OSPF for vrouter=%s-vrouter ip=%s..." % (sw1, ip1), end='')
         sys.stdout.flush()
@@ -351,7 +366,7 @@ if set_ipv4:
                 "ospf-area 0" % (sw1, ip1, netmask))
         print("Done")
         sys.stdout.flush()
-        time.sleep(5)
+        sleep(5)
         ########################################
         #####vRouter-Interface#####
         print("Adding vRouter interface to vrouter=%s-vrouter vlan=%s "
@@ -363,7 +378,7 @@ if set_ipv4:
                     sw2, g_cluster_vlan, ip2, netmask, g_mtu))
         print("Done")
         sys.stdout.flush()
-        time.sleep(2)
+        sleep(2)
         #####OSPF#####
         print("Adding OSPF for vrouter=%s-vrouter ip=%s..." % (sw2, ip2), end='')
         sys.stdout.flush()
@@ -371,7 +386,7 @@ if set_ipv4:
                 "ospf-area 0" % (sw2, ip2, netmask))
         print("Done")
         sys.stdout.flush()
-        time.sleep(5)
+        sleep(5)
     print("")
 
 # Create L3 interfaces with IPv6 addresssing
@@ -404,7 +419,7 @@ if set_ipv6:
                 "%s/%s" % (vr_name, nic, ipaddr, netmask))
         print("Done")
         sys.stdout.flush()
-        time.sleep(2)
+        sleep(2)
         #####OSPF#####
         print("Adding OSPF for IPv6 network on vrouter=%s "
               "nic=%s..." % (vr_name, nic), end='')
@@ -413,7 +428,7 @@ if set_ipv6:
                 "ospf6-area 0.0.0.0" % (vr_name, nic))
         print("Done")
         sys.stdout.flush()
-        time.sleep(5)
+        sleep(5)
 
     v4_interfaces = []
     int_info = run_cmd("vrouter-interface-show vlan 4040 format nic,ip "
@@ -442,7 +457,7 @@ if set_ipv6:
                 "%s/%s" % (vr_name, nic, ipaddr, netmask))
         print("Done")
         sys.stdout.flush()
-        time.sleep(2)
+        sleep(2)
         #####OSPF#####
         print("Adding OSPF for IPv6 network on vrouter=%s "
               "nic=%s..." % (vr_name, nic), end='')
@@ -451,4 +466,4 @@ if set_ipv6:
                 "ospf6-area 0.0.0.0" % (vr_name, nic))
         print("Done")
         sys.stdout.flush()
-        time.sleep(5)
+        sleep(5)
