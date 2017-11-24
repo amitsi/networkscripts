@@ -36,6 +36,14 @@ switch hmplabpsq-we50600 switch-setup-modify in-band-ip 104.255.62.49/27 in-band
 
 vlan490_intfs_cmds = """ 
 vlan-create id 490 scope fabric description vlan-490
+vrouter-modify name hmplabpsq-we60100-vrouter hw-vrrp-id 15
+vrouter-modify name hmplabpsq-we60200-vrouter hw-vrrp-id 15
+vrouter-modify name hmplabpsq-we50100-vrouter hw-vrrp-id 15
+vrouter-modify name hmplabpsq-we50200-vrouter hw-vrrp-id 15
+vrouter-modify name hmplabpsq-we50300-vrouter hw-vrrp-id 15
+vrouter-modify name hmplabpsq-we50400-vrouter hw-vrrp-id 15
+vrouter-modify name hmplabpsq-we50500-vrouter hw-vrrp-id 15
+vrouter-modify name hmplabpsq-we50600-vrouter hw-vrrp-id 15
 vrouter-interface-add vrouter-name hmplabpsq-we60100-vrouter nic eth12.490 ip 10.9.9.1/24 vlan 490 
 vrouter-interface-add vrouter-name hmplabpsq-we60200-vrouter nic eth13.490 ip 10.9.10.1/24 vlan 490 
 vrouter-interface-add vrouter-name hmplabpsq-we50100-vrouter nic eth0.490 ip 104.255.61.130/29 vlan 490 mtu 9216 
@@ -88,98 +96,101 @@ vrouter-ospf-add vrouter-name hmplabpsq-we50200-vrouter network 104.255.62.160/2
 """
 
 tunnel_setup_cmds = """ 
-tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we50200-vrouter peer-vrouter-name hmplabpsq-we50100-vrouter local-ip 104.255.61.129 remote-ip 104.255.61.137
-tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we50100-vrouter peer-vrouter-name hmplabpsq-we50200-vrouter local-ip 104.255.61.129 remote-ip 104.255.61.137
-tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we50100-vrouter peer-vrouter-name hmplabpsq-we50200-vrouter local-ip 104.255.61.129 remote-ip 104.255.61.145
-tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we50200-vrouter peer-vrouter-name hmplabpsq-we50100-vrouter local-ip 104.255.61.129 remote-ip 104.255.61.145
-tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we50100-vrouter peer-vrouter-name hmplabpsq-we60100-vrouter local-ip 104.255.61.129 remote-ip 10.9.9.1
-tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we60100-vrouter peer-vrouter-name hmplabpsq-we50100-vrouter local-ip 104.255.61.129 remote-ip 10.9.9.1
-tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we50100-vrouter peer-vrouter-name hmplabpsq-we60200-vrouter local-ip 104.255.61.129 remote-ip 10.9.10.1
-tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we60200-vrouter peer-vrouter-name hmplabpsq-we50100-vrouter local-ip 104.255.61.129 remote-ip 10.9.10.1
-tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we50400-vrouter peer-vrouter-name hmplabpsq-we50300-vrouter local-ip 104.255.61.137 remote-ip 104.255.61.129
-tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we50300-vrouter peer-vrouter-name hmplabpsq-we50400-vrouter local-ip 104.255.61.137 remote-ip 104.255.61.129
-tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we50300-vrouter peer-vrouter-name hmplabpsq-we50400-vrouter local-ip 104.255.61.137 remote-ip 104.255.61.145
-tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we50400-vrouter peer-vrouter-name hmplabpsq-we50300-vrouter local-ip 104.255.61.137 remote-ip 104.255.61.145
-tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we50300-vrouter peer-vrouter-name hmplabpsq-we60100-vrouter local-ip 104.255.61.137 remote-ip 10.9.9.1
-tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we60100-vrouter peer-vrouter-name hmplabpsq-we50300-vrouter local-ip 104.255.61.137 remote-ip 10.9.9.1
-tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we50300-vrouter peer-vrouter-name hmplabpsq-we60200-vrouter local-ip 104.255.61.137 remote-ip 10.9.10.1
-tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we60200-vrouter peer-vrouter-name hmplabpsq-we50300-vrouter local-ip 104.255.61.137 remote-ip 10.9.10.1
-tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we50600-vrouter peer-vrouter-name hmplabpsq-we50500-vrouter local-ip 104.255.61.145 remote-ip 104.255.61.129
-tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we50500-vrouter peer-vrouter-name hmplabpsq-we50600-vrouter local-ip 104.255.61.145 remote-ip 104.255.61.129
-tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we50600-vrouter peer-vrouter-name hmplabpsq-we50500-vrouter local-ip 104.255.61.145 remote-ip 104.255.61.137
-tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we50500-vrouter peer-vrouter-name hmplabpsq-we50600-vrouter local-ip 104.255.61.145 remote-ip 104.255.61.137
-tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we50500-vrouter peer-vrouter-name hmplabpsq-we60100-vrouter local-ip 104.255.61.145 remote-ip 10.9.9.1
-tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we60100-vrouter peer-vrouter-name hmplabpsq-we50500-vrouter local-ip 104.255.61.145 remote-ip 10.9.9.1
-tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we50500-vrouter peer-vrouter-name hmplabpsq-we60200-vrouter local-ip 104.255.61.145 remote-ip 10.9.10.1
-tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we60200-vrouter peer-vrouter-name hmplabpsq-we50500-vrouter local-ip 104.255.61.145 remote-ip 10.9.10.1
-tunnel-create scope local name hmplabpsq-we60100-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we60100-vrouter local-ip 10.9.9.1 remote-ip 104.255.61.129
-tunnel-create scope local name hmplabpsq-we60100-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we60100-vrouter local-ip 10.9.9.1 remote-ip 104.255.61.137
-tunnel-create scope local name hmplabpsq-we60100-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we60100-vrouter local-ip 10.9.9.1 remote-ip 104.255.61.145
-tunnel-create scope local name hmplabpsq-we60200-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we60200-vrouter local-ip 10.9.10.1 remote-ip 104.255.61.129
-tunnel-create scope local name hmplabpsq-we60200-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we60200-vrouter local-ip 10.9.10.1 remote-ip 104.255.61.137
-tunnel-create scope local name hmplabpsq-we60200-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we60200-vrouter local-ip 10.9.10.1 remote-ip 104.255.61.145
+switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we50200-vrouter peer-vrouter-name hmplabpsq-we50100-vrouter local-ip 104.255.61.129 remote-ip 104.255.61.137
+switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we50100-vrouter peer-vrouter-name hmplabpsq-we50200-vrouter local-ip 104.255.61.129 remote-ip 104.255.61.137
+switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we50100-vrouter peer-vrouter-name hmplabpsq-we50200-vrouter local-ip 104.255.61.129 remote-ip 104.255.61.145
+switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we50200-vrouter peer-vrouter-name hmplabpsq-we50100-vrouter local-ip 104.255.61.129 remote-ip 104.255.61.145
+switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we50100-vrouter peer-vrouter-name hmplabpsq-we60100-vrouter local-ip 104.255.61.129 remote-ip 10.9.9.1
+switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we60100-vrouter peer-vrouter-name hmplabpsq-we50100-vrouter local-ip 104.255.61.129 remote-ip 10.9.9.1
+switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we50100-vrouter peer-vrouter-name hmplabpsq-we60200-vrouter local-ip 104.255.61.129 remote-ip 10.9.10.1
+switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we60200-vrouter peer-vrouter-name hmplabpsq-we50100-vrouter local-ip 104.255.61.129 remote-ip 10.9.10.1
+switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we50400-vrouter peer-vrouter-name hmplabpsq-we50300-vrouter local-ip 104.255.61.137 remote-ip 104.255.61.129
+switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we50300-vrouter peer-vrouter-name hmplabpsq-we50400-vrouter local-ip 104.255.61.137 remote-ip 104.255.61.129
+switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we50300-vrouter peer-vrouter-name hmplabpsq-we50400-vrouter local-ip 104.255.61.137 remote-ip 104.255.61.145
+switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we50400-vrouter peer-vrouter-name hmplabpsq-we50300-vrouter local-ip 104.255.61.137 remote-ip 104.255.61.145
+switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we50300-vrouter peer-vrouter-name hmplabpsq-we60100-vrouter local-ip 104.255.61.137 remote-ip 10.9.9.1
+switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we60100-vrouter peer-vrouter-name hmplabpsq-we50300-vrouter local-ip 104.255.61.137 remote-ip 10.9.9.1
+switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we50300-vrouter peer-vrouter-name hmplabpsq-we60200-vrouter local-ip 104.255.61.137 remote-ip 10.9.10.1
+switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we60200-vrouter peer-vrouter-name hmplabpsq-we50300-vrouter local-ip 104.255.61.137 remote-ip 10.9.10.1
+switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we50600-vrouter peer-vrouter-name hmplabpsq-we50500-vrouter local-ip 104.255.61.145 remote-ip 104.255.61.129
+switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we50500-vrouter peer-vrouter-name hmplabpsq-we50600-vrouter local-ip 104.255.61.145 remote-ip 104.255.61.129
+switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we50600-vrouter peer-vrouter-name hmplabpsq-we50500-vrouter local-ip 104.255.61.145 remote-ip 104.255.61.137
+switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we50500-vrouter peer-vrouter-name hmplabpsq-we50600-vrouter local-ip 104.255.61.145 remote-ip 104.255.61.137
+switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we50500-vrouter peer-vrouter-name hmplabpsq-we60100-vrouter local-ip 104.255.61.145 remote-ip 10.9.9.1
+switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we60100-vrouter peer-vrouter-name hmplabpsq-we50500-vrouter local-ip 104.255.61.145 remote-ip 10.9.9.1
+switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we50500-vrouter peer-vrouter-name hmplabpsq-we60200-vrouter local-ip 104.255.61.145 remote-ip 10.9.10.1
+switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we60200-vrouter peer-vrouter-name hmplabpsq-we50500-vrouter local-ip 104.255.61.145 remote-ip 10.9.10.1
+switch hmplabpsq-we60100 tunnel-create scope local name hmplabpsq-we60100-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we60100-vrouter local-ip 10.9.9.1 remote-ip 104.255.61.129
+switch hmplabpsq-we60100 tunnel-create scope local name hmplabpsq-we60100-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we60100-vrouter local-ip 10.9.9.1 remote-ip 104.255.61.137
+switch hmplabpsq-we60100 tunnel-create scope local name hmplabpsq-we60100-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we60100-vrouter local-ip 10.9.9.1 remote-ip 104.255.61.145
+switch hmplabpsq-we60200 tunnel-create scope local name hmplabpsq-we60200-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we60200-vrouter local-ip 10.9.10.1 remote-ip 104.255.61.129
+switch hmplabpsq-we60200 tunnel-create scope local name hmplabpsq-we60200-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we60200-vrouter local-ip 10.9.10.1 remote-ip 104.255.61.137
+switch hmplabpsq-we60200 tunnel-create scope local name hmplabpsq-we60200-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we60200-vrouter local-ip 10.9.10.1 remote-ip 104.255.61.145
 
-tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we60100 vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we60100 vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we60200 vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we60200 vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we60100 vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we60100 vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we60200 vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we60200 vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we60100 vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we60100 vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we60200 vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we60200 vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we60100-to-hmplabpsq-we50100-pair vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we60100-to-hmplabpsq-we50300-pair vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we60100-to-hmplabpsq-we50500-pair vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we60200-to-hmplabpsq-we50100-pair vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we60200-to-hmplabpsq-we50300-pair vxlan 6100
-tunnel-vxlan-add name hmplabpsq-we60200-to-hmplabpsq-we50500-pair vxlan 6100
+switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 6100
+switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 6100
+switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we60100 vxlan 6100
+switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we60100 vxlan 6100
+switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we60200 vxlan 6100
+switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we60200 vxlan 6100
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 6100
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 6100
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 6100
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 6100
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we60100 vxlan 6100
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we60100 vxlan 6100
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we60200 vxlan 6100
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we60200 vxlan 6100
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 6100
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 6100
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 6100
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 6100
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we60100 vxlan 6100
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we60100 vxlan 6100
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we60200 vxlan 6100
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we60200 vxlan 6100
+switch hmplabpsq-we60100 tunnel-vxlan-add name hmplabpsq-we60100-to-hmplabpsq-we50100-pair vxlan 6100
+switch hmplabpsq-we60100 tunnel-vxlan-add name hmplabpsq-we60100-to-hmplabpsq-we50300-pair vxlan 6100
+switch hmplabpsq-we60100 tunnel-vxlan-add name hmplabpsq-we60100-to-hmplabpsq-we50500-pair vxlan 6100
+switch hmplabpsq-we60200 tunnel-vxlan-add name hmplabpsq-we60200-to-hmplabpsq-we50100-pair vxlan 6100
+switch hmplabpsq-we60200 tunnel-vxlan-add name hmplabpsq-we60200-to-hmplabpsq-we50300-pair vxlan 6100
+switch hmplabpsq-we60200 tunnel-vxlan-add name hmplabpsq-we60200-to-hmplabpsq-we50500-pair vxlan 6100
 
-tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 4210
-tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 4210
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 4210
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 4210
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 4210
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 4210
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 4210
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 4210
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 4210
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 4210
+vlan-create id 241 vxlan 2410 scope fabric
+vlan-create id 242 vxlan 2420 scope fabric
+vlan-create id 243 vxlan 2430 scope fabric
+switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 2410
+switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 2410
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 2410
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 2410
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 2410
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 2410
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 2410
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 2410
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 2410
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 2410
 
-tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 4220
-tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 4220
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 4220
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 4220
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 4220
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 4220
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 4220
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 4220
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 4220
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 4220
+switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 2420
+switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 2420
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 2420
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 2420
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 2420
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 2420
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 2420
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 2420
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 2420
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 2420
 
-tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 4230
-tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 4230
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 4230
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 4230
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 4230
-tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 4230
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 4230
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 4230
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 4230
-tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 4230
+switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 2430
+switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 2430
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 2430
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vxlan 2430
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 2430
+switch hmplabpsq-we50300 tunnel-vxlan-add name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vxlan 2430
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 2430
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vxlan 2430
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 2430
+switch hmplabpsq-we50500 tunnel-vxlan-add name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vxlan 2430
 """
  
 syslog_cmds = """
@@ -203,8 +214,8 @@ switch \* role-create name abcd scope local
 
 bgp_cmds = """
 vrouter-interface-add vrouter-name hmplabpsq-we50500-vrouter nic eth7.4091 ip 104.255.61.65/31 ip2 2620:0:167f:b001::32/126 vlan 4091 l3-port 1 mtu 9216 
-vrouter-modify vrouter-name hmplabpsq-we50500-vrouter bgp-as 65542
-vrouter-modify vrouter-name hmplabpsq-we50600-vrouter bgp-as 65542
+vrouter-modify name hmplabpsq-we50500-vrouter bgp-as 65542
+vrouter-modify name hmplabpsq-we50600-vrouter bgp-as 65542
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.9/32
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.8/32
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.7/32
@@ -350,11 +361,13 @@ def sleep(sec):
 def _print(msg, end="nl", must_show=False):
     if not msg:
         print("")
+        sys.stdout.flush()
     elif must_show or not show_only:
         if end == "nl":
             print(msg)
         else:
             print(msg, end='')
+        sys.stdout.flush()
     else:
         pass
 ################
