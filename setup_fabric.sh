@@ -3,16 +3,18 @@
 FAIL=0
 
 verizon_switches=(
-        '10.9.31.60'
-        '10.9.31.61'
-        '10.9.31.62'
-        '10.9.31.63'
-        '10.9.31.64'
-        '10.9.31.65'
-        '10.9.31.66'
-        '10.9.31.67'
-        '10.9.31.68'
+        'tme-ara-spine1'
+        'tme-ara-spine2'
+        'tme-ara-spine3'
+        'tme-ara-spine4'
+        'tme-aquarius-leaf1'
+        'tme-aquarius-leaf2'
+        'tme-aquarius-leaf3'
+        'tme-aquarius-leaf4'
+        'tme-aquarius-leaf5'
+        '10.13.26.204'
 )
+
 ansible_switches=(
 	'10.110.0.160'
 	'10.110.0.161'
@@ -87,6 +89,7 @@ for ip in ${switches[@]}; do
                 sleep 5
         else
                 sshpass -p test123 ssh -q -oStrictHostKeyChecking=no network-admin@$ip -- --quiet fabric-join name $fab_name
+                sleep 3
         fi
         if [[ $? -ne 0 ]]; then
                 echo "Error setting up fabric"

@@ -8,11 +8,14 @@ import sys
 ####################
 # Dynamic Constants
 ####################
-g_loopback_ip = "104.255.61.1"
+g_loopback_ipv4 = "104.255.61.1"
+g_loopback_ipv6 = "2620:0000:167F:b000::10"
 g_ipv4_start = "104.255.61.68"
 g_ipv6_start = "2620:0000:167F:b001::40"
 g_cluster_vlan = 4040
 g_jumbo_mtu = True
+g_loopback_skip_octv4 = [3, 4]
+g_loopback_skip_octv6 = [0x12, 0x13]
 
 ####################
 # Static Constants
@@ -94,6 +97,20 @@ def give_ipv6():
         print("Unsupported IPv6 subnet, valid values are 126 & 127")
         exit(0)
 
+def give_loopback_v6():
+    ip_split = g_loopback_ipv6.split(':')
+    ipprefix = ':'.join(ip_split[:-1])
+    lastoct = ip_split[-1]
+    if not is_hex(lastoct):
+        print("Unsupported IPv6 value, must have last octet as hex value")
+        exit(0)
+    istart = int(lastoct, 16)
+    iend = int('ffff', 16)
+    for i in range(istart, iend):
+        if i in g_loopback_skip_octv6:
+            continue
+        yield "%s:%.4x" % (ipprefix, i)
+
 
 def give_ipv4():
     if g_netmask_v4 != 31:
@@ -107,14 +124,16 @@ def give_ipv4():
 
 
 def give_loopback_v4():
-    ip_split = g_loopback_ip.split('.')
+    ip_split = g_loopback_ipv4.split('.')
     ipprefix = '.'.join(ip_split[:-1])
     lastoct = int(ip_split[-1])
     for i in range(lastoct, 255):
+        if i in g_loopback_skip_octv4:
+            continue
         yield "%s.%s" % (ipprefix, i)
 
 
-def run_cmd(cmd):
+def run_cmd(cmd, ignore_err=False):
     m_cmd = "cli --quiet --no-login-prompt --user network-admin:test123 " + cmd
     if show_only and "-show" not in cmd:
         print("### " + cmd)
@@ -122,7 +141,9 @@ def run_cmd(cmd):
     try:
         proc = subprocess.Popen(m_cmd, shell=True, stdout=subprocess.PIPE)
         output = proc.communicate()[0]
-        if proc.returncode and proc.returncode not in ignore_err_list:
+        if not ignore_err and \
+           proc.returncode and \
+           proc.returncode not in ignore_err_list:
             print("Failed running cmd %s" % m_cmd)
             print("Retrying in 5 seconds....")
             sys.stdout.flush()
@@ -190,11 +211,11 @@ if g_jumbo_mtu:
     if "on" not in port_info:
         _print("Enabling jumbo frames on all ports...", end='')
         sys.stdout.flush()
-        run_cmd("switch \* port-config-modify port all disable")
+        run_cmd("switch \* port-config-modify port all disable", ignore_err=True)
         sleep(2)
-        run_cmd("switch \* port-config-modify port all jumbo")
+        run_cmd("switch \* port-config-modify port all jumbo", ignore_err=True)
         sleep(2)
-        run_cmd("switch \* port-config-modify port all enable")
+        run_cmd("switch \* port-config-modify port all enable", ignore_err=True)
         sleep(5)
         _print("Done")
         sys.stdout.flush()
@@ -274,9 +295,12 @@ for vinfo in vrouter_info:
         break
     vr_name = vinfo
     existing_vrouters.append(vr_name)
+
+loopbackv6_gen = give_loopback_v6()
 # Create vRouters
 for swname in g_fab_nodes:
     vrname = "%s-vrouter" % swname
+    lpv6_ip = loopbackv6_gen.next()
     if vrname in existing_vrouters:
         continue
     _print("Creating vRouter %s on %s..." % (vrname, swname), end='')
@@ -288,17 +312,34 @@ for swname in g_fab_nodes:
     sleep(5)
     _print("Done")
     sys.stdout.flush()
-    _print("Adding loopback interface %s on %s..." % (
-            g_rid_info[swname], vrname), end='')
+    _print("Adding loopback-v4/v6 interface %s/%s on %s..." % (
+            g_rid_info[swname], lpv6_ip, vrname), end='')
     sys.stdout.flush()
     run_cmd("switch %s vrouter-loopback-interface-add vrouter-name %s "
             "ip %s" % (swname, vrname, g_rid_info[swname]))
     sleep(1)
+    run_cmd("switch %s vrouter-loopback-interface-add vrouter-name %s "
+            "ip %s" % (swname, vrname, lpv6_ip))
+    sleep(1)
     run_cmd("vrouter-ospf-add vrouter-name %s network %s/%s "
             "ospf-area 0" % (vrname, g_rid_info[swname], 32))
+    _print("Done")
+    sys.stdout.flush()
+    """
+    lpintf = run_cmd("vrouter-loopback-interface-show vrouter-name %s "
+                     "format router-if parsable-delim ," % vrname)
+    if show_only:
+        temp, nic = 'xx', '<nic>'
+    else:
+        for lp in lpintf:
+            temp, nic = lp.split(',')
+            break
+    run_cmd("vrouter-ospf6-add vrouter-name %s nic %s "
+            "ospf6-area 0.0.0.0" % (vrname, nic))
     sleep(3)
     _print("Done")
     sys.stdout.flush()
+    """
 
 # Create L3 interfaces with IPv4/IPv6 addresssing
 ipv4_generator = give_ipv4()
