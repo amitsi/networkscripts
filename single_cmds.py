@@ -93,6 +93,13 @@ vrouter-ospf6-add vrouter-name hmplabpsq-we50100-vrouter nic eth4.244 ospf6-area
 vrouter-ospf6-add vrouter-name hmplabpsq-we50200-vrouter nic eth5.244 ospf6-area 0.0.0.0
 vrouter-ospf-add vrouter-name hmplabpsq-we50100-vrouter network 104.255.62.160/27 ospf-area 0
 vrouter-ospf-add vrouter-name hmplabpsq-we50200-vrouter network 104.255.62.160/27 ospf-area 0
+
+vrouter-interface-config-add vrouter-name hmplabpsq-we50100-vrouter nic eth0.244 ospf-passive-if
+vrouter-interface-config-add vrouter-name hmplabpsq-we50100-vrouter nic eth1.244 ospf-passive-if
+vrouter-interface-config-add vrouter-name hmplabpsq-we50100-vrouter nic eth4.244 ospf-passive-if
+vrouter-interface-config-add vrouter-name hmplabpsq-we50200-vrouter nic eth2.244 ospf-passive-if
+vrouter-interface-config-add vrouter-name hmplabpsq-we50200-vrouter nic eth3.244 ospf-passive-if
+vrouter-interface-config-add vrouter-name hmplabpsq-we50200-vrouter nic eth5.244 ospf-passive-if
 """
 
 tunnel_setup_cmds = """ 
