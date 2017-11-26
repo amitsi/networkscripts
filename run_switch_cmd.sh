@@ -1,15 +1,16 @@
 #!/bin/bash
 
 verizon_switches=(
-	'10.9.31.60'
-	'10.9.31.61'
-	'10.9.31.62'
-	'10.9.31.63'
-	'10.9.31.64'
-	'10.9.31.65'
-	'10.9.31.66'
-	'10.9.31.67'
-	'10.9.31.68'
+        'tme-ara-spine1'
+        'tme-ara-spine2'
+        'tme-ara-spine3'
+        'tme-ara-spine4'
+        'tme-aquarius-leaf1'
+        'tme-aquarius-leaf2'
+        'tme-aquarius-leaf3'
+        'tme-aquarius-leaf4'
+        'tme-aquarius-leaf5'
+        '10.13.26.204'
 )
 
 ansible_switches=(
@@ -64,13 +65,19 @@ for ip in ${switches[@]}; do
         echo "Switch : $ip"
         echo "----------------------------------"
 	ping -c 1 $ip -W 2 > /dev/null
-	if [[ $? -eq 0 ]]; then
-		sshpass -p 'test123' ssh -q -oStrictHostKeyChecking=no network-admin@$ip -- --quiet "$REPLY"
-	else
-		echo "Switch: $ip is not reachable"
+	if [[ $? -ne 0 ]]; then
+		echo "Switch: $ip - Unreachable"
 		echo "----------------------------------"
+		continue
 	fi
+	nc -z $ip 22 -w 2
+	if [[ $? -ne 0 ]]; then
+		echo "Switch: $ip - Unable to SSH"
+		echo "----------------------------------"
+		continue
+	fi
+	#sshpass -p 'test123' ssh -q -oStrictHostKeyChecking=no network-admin@$ip -- --quiet "$REPLY"
+	sshpass -p 'test123' ssh -q -oStrictHostKeyChecking=no root@$ip --  "$REPLY"
 done
 
 exit 0
-
