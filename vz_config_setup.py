@@ -325,21 +325,8 @@ for swname in g_fab_nodes:
             "ospf-area 0" % (vrname, g_rid_info[swname], 32))
     _print("Done")
     sys.stdout.flush()
-    """
-    lpintf = run_cmd("vrouter-loopback-interface-show vrouter-name %s "
-                     "format router-if parsable-delim ," % vrname)
-    if show_only:
-        temp, nic = 'xx', '<nic>'
-    else:
-        for lp in lpintf:
-            temp, nic = lp.split(',')
-            break
-    run_cmd("vrouter-ospf6-add vrouter-name %s nic %s "
-            "ospf6-area 0.0.0.0" % (vrname, nic))
-    sleep(3)
-    _print("Done")
-    sys.stdout.flush()
-    """
+    run_cmd("vrouter-ospf6-add vrouter-name %s nic lo ospf6-area "
+            "0.0.0.0" % vrname)
 
 # Create L3 interfaces with IPv4/IPv6 addresssing
 ipv4_generator = give_ipv4()
