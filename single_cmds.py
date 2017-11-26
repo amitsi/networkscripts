@@ -96,33 +96,25 @@ vrouter-ospf-add vrouter-name hmplabpsq-we50200-vrouter network 104.255.62.160/2
 """
 
 tunnel_setup_cmds = """ 
-switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we50200-vrouter peer-vrouter-name hmplabpsq-we50100-vrouter local-ip 104.255.61.129 remote-ip 104.255.61.137
 switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we50100-vrouter peer-vrouter-name hmplabpsq-we50200-vrouter local-ip 104.255.61.129 remote-ip 104.255.61.137
 switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we50100-vrouter peer-vrouter-name hmplabpsq-we50200-vrouter local-ip 104.255.61.129 remote-ip 104.255.61.145
-switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we50200-vrouter peer-vrouter-name hmplabpsq-we50100-vrouter local-ip 104.255.61.129 remote-ip 104.255.61.145
-switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we50100-vrouter peer-vrouter-name hmplabpsq-we60100-vrouter local-ip 104.255.61.129 remote-ip 10.9.9.1
-switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we60100-vrouter peer-vrouter-name hmplabpsq-we50100-vrouter local-ip 104.255.61.129 remote-ip 10.9.9.1
-switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we50100-vrouter peer-vrouter-name hmplabpsq-we60200-vrouter local-ip 104.255.61.129 remote-ip 10.9.10.1
-switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we60200-vrouter peer-vrouter-name hmplabpsq-we50100-vrouter local-ip 104.255.61.129 remote-ip 10.9.10.1
-switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we50400-vrouter peer-vrouter-name hmplabpsq-we50300-vrouter local-ip 104.255.61.137 remote-ip 104.255.61.129
+switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we50100-vrouter peer-vrouter-name hmplabpsq-we50200-vrouter local-ip 104.255.61.129 remote-ip 10.9.9.1
+switch hmplabpsq-we50100 tunnel-create scope cluster name hmplabpsq-we50100-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we50100-vrouter peer-vrouter-name hmplabpsq-we50200-vrouter local-ip 104.255.61.129 remote-ip 10.9.10.1
+
 switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we50300-vrouter peer-vrouter-name hmplabpsq-we50400-vrouter local-ip 104.255.61.137 remote-ip 104.255.61.129
 switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we50300-vrouter peer-vrouter-name hmplabpsq-we50400-vrouter local-ip 104.255.61.137 remote-ip 104.255.61.145
-switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we50400-vrouter peer-vrouter-name hmplabpsq-we50300-vrouter local-ip 104.255.61.137 remote-ip 104.255.61.145
-switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we50300-vrouter peer-vrouter-name hmplabpsq-we60100-vrouter local-ip 104.255.61.137 remote-ip 10.9.9.1
-switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we60100-vrouter peer-vrouter-name hmplabpsq-we50300-vrouter local-ip 104.255.61.137 remote-ip 10.9.9.1
-switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we50300-vrouter peer-vrouter-name hmplabpsq-we60200-vrouter local-ip 104.255.61.137 remote-ip 10.9.10.1
-switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we60200-vrouter peer-vrouter-name hmplabpsq-we50300-vrouter local-ip 104.255.61.137 remote-ip 10.9.10.1
-switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we50600-vrouter peer-vrouter-name hmplabpsq-we50500-vrouter local-ip 104.255.61.145 remote-ip 104.255.61.129
+switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we50300-vrouter peer-vrouter-name hmplabpsq-we50400-vrouter local-ip 104.255.61.137 remote-ip 10.9.9.1
+switch hmplabpsq-we50300 tunnel-create scope cluster name hmplabpsq-we50300-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we50300-vrouter peer-vrouter-name hmplabpsq-we50400-vrouter local-ip 104.255.61.137 remote-ip 10.9.10.1
+
 switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we50500-vrouter peer-vrouter-name hmplabpsq-we50600-vrouter local-ip 104.255.61.145 remote-ip 104.255.61.129
-switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we50600-vrouter peer-vrouter-name hmplabpsq-we50500-vrouter local-ip 104.255.61.145 remote-ip 104.255.61.137
 switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we50500-vrouter peer-vrouter-name hmplabpsq-we50600-vrouter local-ip 104.255.61.145 remote-ip 104.255.61.137
-switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we50500-vrouter peer-vrouter-name hmplabpsq-we60100-vrouter local-ip 104.255.61.145 remote-ip 10.9.9.1
-switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we60100-vrouter peer-vrouter-name hmplabpsq-we50500-vrouter local-ip 104.255.61.145 remote-ip 10.9.9.1
-switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we50500-vrouter peer-vrouter-name hmplabpsq-we60200-vrouter local-ip 104.255.61.145 remote-ip 10.9.10.1
-switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we60200-vrouter peer-vrouter-name hmplabpsq-we50500-vrouter local-ip 104.255.61.145 remote-ip 10.9.10.1
+switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we60100 vrouter-name hmplabpsq-we50500-vrouter peer-vrouter-name hmplabpsq-we50600-vrouter local-ip 104.255.61.145 remote-ip 10.9.9.1
+switch hmplabpsq-we50500 tunnel-create scope cluster name hmplabpsq-we50500-pair-to-hmplabpsq-we60200 vrouter-name hmplabpsq-we50500-vrouter peer-vrouter-name hmplabpsq-we50600-vrouter local-ip 104.255.61.145 remote-ip 10.9.10.1
+
 switch hmplabpsq-we60100 tunnel-create scope local name hmplabpsq-we60100-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we60100-vrouter local-ip 10.9.9.1 remote-ip 104.255.61.129
 switch hmplabpsq-we60100 tunnel-create scope local name hmplabpsq-we60100-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we60100-vrouter local-ip 10.9.9.1 remote-ip 104.255.61.137
 switch hmplabpsq-we60100 tunnel-create scope local name hmplabpsq-we60100-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we60100-vrouter local-ip 10.9.9.1 remote-ip 104.255.61.145
+
 switch hmplabpsq-we60200 tunnel-create scope local name hmplabpsq-we60200-to-hmplabpsq-we50100-pair vrouter-name hmplabpsq-we60200-vrouter local-ip 10.9.10.1 remote-ip 104.255.61.129
 switch hmplabpsq-we60200 tunnel-create scope local name hmplabpsq-we60200-to-hmplabpsq-we50300-pair vrouter-name hmplabpsq-we60200-vrouter local-ip 10.9.10.1 remote-ip 104.255.61.137
 switch hmplabpsq-we60200 tunnel-create scope local name hmplabpsq-we60200-to-hmplabpsq-we50500-pair vrouter-name hmplabpsq-we60200-vrouter local-ip 10.9.10.1 remote-ip 104.255.61.145
