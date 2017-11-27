@@ -213,8 +213,8 @@ switch \* role-create name abcd scope local
 
 bgp_cmds = """
 vrouter-interface-add vrouter-name hmplabpsq-we50500-vrouter nic eth7.4091 ip 104.255.61.65/31 ip2 2620:0:167f:b001::32/126 vlan 4091 l3-port 1 mtu 9216 
-vrouter-modify name hmplabpsq-we50500-vrouter bgp-as 65542
-vrouter-modify name hmplabpsq-we50600-vrouter bgp-as 65542
+vrouter-modify name hmplabpsq-we50500-vrouter bgp-as 65542 ospf-default-information always
+vrouter-modify name hmplabpsq-we50600-vrouter bgp-as 65542 ospf-default-information always
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.9/32
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.8/32
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.7/32
@@ -322,6 +322,23 @@ vrouter-pim-config-modify vrouter-name hmplabpsq-we50300-vrouter query-interval 
 vrouter-pim-config-modify vrouter-name hmplabpsq-we50400-vrouter query-interval 10 querier-timeout 30
 vrouter-pim-config-modify vrouter-name hmplabpsq-we50500-vrouter query-interval 10 querier-timeout 30
 vrouter-pim-config-modify vrouter-name hmplabpsq-we50600-vrouter query-interval 10 querier-timeout 30
+"""
+
+trunk_vlag_cmds = """
+switch hmplabpsq-we50500 trunk-create name 505tocisco ports 2,3
+switch hmplabpsq-we50600 trunk-create name 506tocisco ports 2,3
+
+switch hmplabpsq-we50500 vlag-create name pntocisco port 505tocisco peer-port 506tocisco mode active-active lacp-mode passive
+ 
+switch hmplabpsq-we50500 vlan-port-add ports 129 vlan-id 241
+switch hmplabpsq-we50500 vlan-port-add ports 129 vlan-id 242
+switch hmplabpsq-we50500 vlan-port-add ports 129 vlan-id 243
+switch hmplabpsq-we50500  vlan-port-add ports 129 vlan-id 610
+ 
+switch hmplabpsq-we50600 vlan-port-add ports 129 vlan-id 241
+switch hmplabpsq-we50600 vlan-port-add ports 129 vlan-id 242
+switch hmplabpsq-we50600 vlan-port-add ports 129 vlan-id 243
+switch hmplabpsq-we50600  vlan-port-add ports 129 vlan-id 610
 """
 
 cpu_class_cmds = """
@@ -441,6 +458,17 @@ _print("")
 _print("### Setting up BGP...", must_show=True)
 _print("### ==================", must_show=True)
 for cmd in bgp_cmds.split("\n"):
+    cmd = cmd.strip()
+    if not cmd:
+        continue
+    _print("Running cmd: %s" % cmd)
+    run_cmd(cmd)
+    sleep(g_inter_cmd_sleep)
+_print("")
+
+_print("### Setting up trunk/vLAG...", must_show=True)
+_print("### ========================", must_show=True)
+for cmd in trunk_vlag_cmds.split("\n"):
     cmd = cmd.strip()
     if not cmd:
         continue
