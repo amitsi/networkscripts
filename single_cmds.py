@@ -1,4 +1,5 @@
 from __future__ import print_function
+from string import Template
 import subprocess
 import argparse
 import time
@@ -10,6 +11,11 @@ import sys
 
 parser = argparse.ArgumentParser(description='Single Cmds')
 parser.add_argument(
+    '-p', '--port',
+    help='vxlan-loopback-trunk port',
+    required=True
+)
+parser.add_argument(
     '--show-only',
     help='will show commands it will run',
     action='store_true',
@@ -19,9 +25,15 @@ args = vars(parser.parse_args())
 
 show_only = args["show_only"]
 
+g_lport = args['port']
+if not g_lport.isdigit():
+    print("VXLAN Loopback port is incorrect")
+    exit(0)
+
 g_inter_cmd_sleep = 3
 
 inband_setup_cmds = """
+switch \* trunk-modify name vxlan-loopback-trunk ports $loport
 switch \* vlan-create id 610 vxlan 6100 scope local description inbandMGMT
 switch \* fabric-local-modify vlan 610
 switch hmplabpsq-we60100 switch-setup-modify in-band-ip 104.255.62.40/27 in-band-ip6 2620:0:167f:b010::10/64
@@ -215,6 +227,7 @@ bgp_cmds = """
 vrouter-interface-add vrouter-name hmplabpsq-we50500-vrouter nic eth7.4091 ip 104.255.61.65/31 ip2 2620:0:167f:b001::32/126 vlan 4091 l3-port 1 mtu 9216 
 vrouter-modify name hmplabpsq-we50500-vrouter bgp-as 65542 ospf-default-information always
 vrouter-modify name hmplabpsq-we50600-vrouter bgp-as 65542 ospf-default-information always
+vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.10/32
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.9/32
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.8/32
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.7/32
@@ -225,8 +238,6 @@ vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.6
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.64/26
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b000::10/128
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b000::11/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b000::12/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b000::13/128
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b000::14/128
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b000::15/128
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b000::16/128
@@ -234,16 +245,6 @@ vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:16
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b000::18/128
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b000::19/128
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b015::/64
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b010::10/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b010::11/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b010::12/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b010::13/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b010::14/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b010::15/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b010::16/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b010::17/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b010::18/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b010::19/128
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b001::38/126
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b001::3c/126
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 2620:0:167f:b001::40/126
@@ -267,6 +268,7 @@ vrouter-ospf-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.96/31
  
 vrouter-interface-add vrouter-name hmplabpsq-we50600-vrouter nic eth2.4090 ip 104.255.61.67/31 ip2 2620:0:167f:b001::36/126 vlan 4090 l3-port 1 mtu 9216 
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 104.255.61.10/32
+vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 104.255.61.9/32
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 104.255.61.8/32
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 104.255.61.7/32
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 104.255.61.6/32
@@ -275,8 +277,6 @@ vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 104.255.6
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 104.255.61.1/32
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b000::10/128
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b000::11/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b000::12/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b000::13/128
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b000::14/128
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b000::15/128
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b000::16/128
@@ -284,16 +284,6 @@ vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:16
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b000::18/128
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b000::19/128
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b015::/64
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b010::10/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b010::11/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b010::12/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b010::13/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b010::14/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b010::15/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b010::16/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b010::17/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b010::18/128
-vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b010::19/128
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b001::38/126
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b001::3c/126
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 2620:0:167f:b001::40/126
@@ -349,7 +339,6 @@ cpu-class-modify name vrrp hog-protect enable
 cpu-class-modify name local-subnet hog-protect enable
 cpu-class-modify name stp hog-protect enable
 cpu-class-modify name bfd hog-protect enable
-cpu-class-modify name pim hog-protect enable
 switch \* port-cos-bw-modify cos 0 port 1-104 min-bw-guarantee 68
 switch \* port-cos-bw-modify cos 4 port 1-104 min-bw-guarantee 8
 switch \* port-cos-bw-modify cos 5 port 1-104 min-bw-guarantee 20
@@ -391,6 +380,8 @@ def _print(msg, end="nl", must_show=False):
 ######### Running Commands ####################
 _print("### Setting up Inband IP v4/v6 on vlan 490...", must_show=True)
 _print("### =========================================", must_show=True)
+inbandcmd = Template(inband_setup_cmds)
+inband_setup_cmds = inbandcmd.substitute(loport=g_lport)
 for cmd in inband_setup_cmds.split("\n"):
     cmd = cmd.strip()
     if not cmd:

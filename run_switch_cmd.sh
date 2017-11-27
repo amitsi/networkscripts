@@ -1,5 +1,6 @@
 #!/bin/bash
 
+USER="root"
 verizon_switches=(
         'tme-ara-spine1'
         'tme-ara-spine2'
@@ -60,24 +61,61 @@ if [[ -z $REPLY ]]; then
 	exit 0
 fi
 
-for ip in ${switches[@]}; do
-        echo "----------------------------------"
-        echo "Switch : $ip"
-        echo "----------------------------------"
-	ping -c 1 $ip -W 2 > /dev/null
-	if [[ $? -ne 0 ]]; then
-		echo "Switch: $ip - Unreachable"
-		echo "----------------------------------"
-		continue
-	fi
-	nc -z $ip 22 -w 2
-	if [[ $? -ne 0 ]]; then
-		echo "Switch: $ip - Unable to SSH"
-		echo "----------------------------------"
-		continue
-	fi
-	#sshpass -p 'test123' ssh -q -oStrictHostKeyChecking=no network-admin@$ip -- --quiet "$REPLY"
-	sshpass -p 'test123' ssh -q -oStrictHostKeyChecking=no root@$ip --  "$REPLY"
-done
+PARALLEL=0
+if [[ $1 = "-p" ]]; then
+	PARALLEL=1
+fi
 
-exit 0
+function run_cmd() {
+	output=$(sshpass -p "test123" ssh -q -oStrictHostKeyChecking=no $USER@$ip -- "$REPLY")
+	ping -c 1 $1 -W 2 > /dev/null
+	if [[ $? -ne 0 ]]; then
+		echo "$1 - Unreachable"
+		continue
+	fi
+	nc -z $1 22 -w 2
+	if [[ $? -ne 0 ]]; then
+		echo "$1 - Unable to SSH"
+		continue
+	fi
+	echo "$1 - $output"
+	sleep 1
+}
+
+if [[ $PARALLEL -eq 1 ]]; then
+	FAIL=0
+	for ip in ${switches[@]}; do
+		run_cmd $ip &
+	done
+	for job in `jobs -p`
+	do
+	    wait $job || let "FAIL+=1"
+	done
+
+	echo "==========================================="
+	if [ "$FAIL" == "0" ]; then
+		echo "Cmd ran successfully on all switches :)"
+	else
+		echo "Some issue. Please try sequentially !"
+	fi
+	echo "==========================================="
+else
+	for ip in ${switches[@]}; do
+		echo "----------------------------------"
+		echo "Switch : $ip"
+		echo "----------------------------------"
+		ping -c 1 $ip -W 2 > /dev/null
+		if [[ $? -ne 0 ]]; then
+			echo "Switch: $ip - Unreachable"
+			echo "----------------------------------"
+			continue
+		fi
+		nc -z $ip 22 -w 2
+		if [[ $? -ne 0 ]]; then
+			echo "Switch: $ip - Unable to SSH"
+			echo "----------------------------------"
+			continue
+		fi
+		sshpass -p 'test123' ssh -q -oStrictHostKeyChecking=no $USER@$ip --  "$REPLY"
+	done
+fi
