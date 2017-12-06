@@ -1,6 +1,7 @@
 from __future__ import print_function
 import subprocess
 import re
+import sys
 
 BASEURL = "http://sandy:8081/artifactory/offline-pkgs/onvl/nvOS-3.0.0/"
 TEN_MINS = 10 * 60
@@ -21,10 +22,12 @@ def run_cmd(cmd, shell=False):
 
 def perror(msg):
     print(msg)
+    sys.stdout.flush()
     exit(0)
 
 def notify(msg):
     print(msg)
+    sys.stdout.flush()
 
 def uptime_to_mtime(time_str):
     time_int = 0
@@ -72,10 +75,12 @@ def do_upgrade():
     if not to_vers:
         perror("No pkgs with higher nvOS version found")
 
+    sleep(2)
     notify("Downloading pkg from %s..." % pkg_url)
     run_cmd("rm /sftp/import/*; wget -qP /sftp/import %s" % pkg_url, shell=True)
-
+    sleep(5)
     notify("Upgrading:  %s -> %s..." % (from_vers, to_vers))
+    run_cmd("fabric-upgrade-start packages /sftp/import/%s auto-finish" % pkg)
 
 def do_l3_checks():
     ospfv4 = False
@@ -94,3 +99,7 @@ def do_l3_checks():
         notify("OSPFv4 neighbor count doesn't match to %d" % OSPF_CNT)
     if not ospfv6:
         notify("OSPFv6 neighbor count doesn't match to %d" % OSPF6_CNT)
+
+if __name__ == "__main__":
+    # TODO Add uptime check code and based on that do l3-checks or upgrade
+    pass
