@@ -140,6 +140,8 @@ switch hmplabpsq-we60200 tunnel-create scope local name hmplabpsq-we60200-to-hmp
 
 switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 6100
 switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50300-pair vxlan 6100
+switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50500-pair vxlan 6100
+switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we50500-pair vxlan 6100
 switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we60100 vxlan 6100
 switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we60100 vxlan 6100
 switch hmplabpsq-we50100 tunnel-vxlan-add name hmplabpsq-we50100-pair-to-hmplabpsq-we60200 vxlan 6100
@@ -209,22 +211,22 @@ admin-syslog-create name vzsyslog scope fabric host 146.13.191.77 message-format
 """
  
 snmp_cmds = """ 
-admin-service-modify if mgmt ssh nfs no-web no-web-ssl snmp net-api icmp
-admin-service-modify if data ssh nfs no-web no-web-ssl snmp net-api icmp
-admin-session-timeout-modify timeout 3600s
-snmp-user-create user-name VINETro auth priv auth-password baseball priv-password baseball
-snmp-user-create user-name VINETrw auth priv auth-password football priv-password football
-snmp-community-create community-string baseball community-type read-only
-snmp-community-create community-string football community-type read-write
-snmp-trap-sink-create community baseball type TRAP_TYPE_V2_INFORM dest-host 104.254.40.101
-snmp-vacm-create user-type rouser user-name __nvOS_internal no-auth no-priv
-snmp-vacm-create user-type rwuser user-name VINETro auth priv
-snmp-vacm-create user-type rwuser user-name VINETrw auth priv
+switch \* admin-service-modify if mgmt ssh nfs no-web no-web-ssl snmp net-api icmp
+switch \* admin-service-modify if data ssh nfs no-web no-web-ssl snmp net-api icmp
+switch \* admin-session-timeout-modify timeout 3600s
+switch \* snmp-user-create user-name VINETro auth priv auth-password baseball priv-password baseball
+switch \* snmp-user-create user-name VINETrw auth priv auth-password football priv-password football
+switch \* snmp-community-create community-string baseball community-type read-only
+switch \* snmp-community-create community-string football community-type read-write
+switch \* snmp-trap-sink-create community baseball type TRAP_TYPE_V2_INFORM dest-host 104.254.40.101
+switch \* snmp-vacm-create user-type rouser user-name __nvOS_internal no-auth no-priv
+switch \* snmp-vacm-create user-type rouser user-name VINETro auth priv
+switch \* snmp-vacm-create user-type rwuser user-name VINETrw auth priv
 switch \* role-create name abcd scope local
 """
 
 bgp_cmds = """
-vrouter-interface-add vrouter-name hmplabpsq-we50500-vrouter nic eth7.4091 ip 104.255.61.65/31 ip2 2620:0:167f:b001::32/126 vlan 4091 l3-port 1 mtu 9216 
+vrouter-interface-add vrouter-name hmplabpsq-we50500-vrouter ip 104.255.61.65/31 ip2 2620:0:167f:b001::32/126 l3-port 1 mtu 9216 
 vrouter-modify name hmplabpsq-we50500-vrouter bgp-as 65542 ospf-default-information always
 vrouter-modify name hmplabpsq-we50600-vrouter bgp-as 65542 ospf-default-information always
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.10/32
@@ -266,7 +268,7 @@ vrouter-ospf-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.90/31
 vrouter-ospf-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.144/29 ospf-area 0
 vrouter-ospf-add vrouter-name hmplabpsq-we50500-vrouter network 104.255.61.96/31 ospf-area 0
  
-vrouter-interface-add vrouter-name hmplabpsq-we50600-vrouter nic eth2.4090 ip 104.255.61.67/31 ip2 2620:0:167f:b001::36/126 vlan 4090 l3-port 1 mtu 9216 
+vrouter-interface-add vrouter-name hmplabpsq-we50600-vrouter ip 104.255.61.67/31 ip2 2620:0:167f:b001::36/126 l3-port 1 mtu 9216 
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 104.255.61.10/32
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 104.255.61.9/32
 vrouter-bgp-network-add vrouter-name hmplabpsq-we50600-vrouter network 104.255.61.8/32

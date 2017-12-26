@@ -62,65 +62,78 @@ def sleep(sec):
 
 ##################
 
-def toggle(switch, toggle_ports, toggle_speed, port_speed, max_ports):
+def toggle(switch, toggle_ports, toggle_speed, port_speed, splitter_ports):
     """
     Method to toggle ports for topology discovery
     :return: The output messages for assignment.
     """
     print("### Toggling ports for switch %s, from %s to %s" % (
-            sw_name, port_speed, toggle_speed))
-    ports_to_modify = []
+            switch, port_speed, toggle_speed))
     for speed in toggle_speed:
+        # Check if the speed to be converted can be for all the ports
+        # or just first port. For ex: 40 can only be set for first port
+        # 25/10 can be set for all the ports if port speed is 100g.
+        if int(port_speed.strip('g'))/int(speed.strip('g')) >= 4:
+            is_splittable = True
+        else:
+            is_splittable = False
         local_ports = run_cmd('switch %s lldp-show format local-port '
                               'parsable-delim ,' % switch)
-        ports_to_modify = sorted(list(set(toggle_ports) - set(local_ports)),
+        _undiscovered_ports = sorted(list(set(toggle_ports) - set(local_ports)),
                                  key=lambda x: int(x))
-        ports_to_modify = ",".join(ports_to_modify)
+        non_splittable_ports = []
+        undiscovered_ports = []
+        for _port in _undiscovered_ports:
+            if splitter_ports.get(_port, 0) == 1:
+                undiscovered_ports.append("%s-%s" % (_port, int(_port)+3))
+            elif splitter_ports.get(_port, 0) == 0:
+                undiscovered_ports.append(_port)
+            else:
+                # Skip intermediate splitter ports
+                continue
+            if not is_splittable :
+                non_splittable_ports.append(_port)
+        undiscovered_ports = ",".join(undiscovered_ports)
 
         print("%s(%s) >> Toggling ports %s to %s" % (
-            switch, port_speed, ports_to_modify, speed))
+            switch, port_speed, undiscovered_ports, speed))
         run_cmd('switch %s port-config-modify port %s '
-                'disable' % (switch, ports_to_modify))
-        run_cmd('switch %s port-config-modify port %s '
-                'speed %s' % (switch, ports_to_modify, speed))
-        run_cmd('switch %s port-config-modify port %s '
-                'enable' % (switch, ports_to_modify))
+                'disable' % (switch, undiscovered_ports))
+        if non_splittable_ports:
+            non_splittable_ports = ",".join(non_splittable_ports)
+            run_cmd('switch %s port-config-modify port %s '
+                    'speed %s enable' % (switch, non_splittable_ports, speed))
+        else:
+            run_cmd('switch %s port-config-modify port %s '
+                    'speed %s enable' % (switch, undiscovered_ports, speed))
 
         sleep(10)
 
     # Revert undiscovered ports back to their original speed
     local_ports = run_cmd('switch %s lldp-show format local-port '
                           'parsable-delim ,' % switch)
-    ports_to_modify = list(set(toggle_ports) - set(local_ports))
-    next_ports = ",".join([str(int(i) + 1) for i in ports_to_modify])
-    bezel_info = run_cmd('switch %s port-show port %s format port,bezel-port '
-                         'parsable-delim ,' % (switch, next_ports))
-    bezel_ports = []
-    non_bezel_ports = []
-    for binfo in bezel_info:
-        if not binfo:
-            break 
-        _port, _binfo = binfo.split(',')
-        _port = int(_port)
-        if '.2' in _binfo:
-            bezel_ports.append("%s-%s" % (_port-1, _port+2))
+    _undiscovered_ports = sorted(list(set(toggle_ports) - set(local_ports)),
+                             key=lambda x: int(x))
+    disable_ports = []
+    undiscovered_ports = []
+    for _port in _undiscovered_ports:
+        if splitter_ports.get(_port, 0) == 1:
+            disable_ports.append("%s-%s" % (_port, int(_port)+3))
+            undiscovered_ports.append(_port)
+        elif splitter_ports.get(_port, 0) == 0:
+            disable_ports.append(str(_port))
+            undiscovered_ports.append(_port)
         else:
-            non_bezel_ports.append(str(_port-1))
-    ports_to_modify = ",".join(sorted(ports_to_modify, key=lambda x: int(x)))
-    bezel_ports = ",".join(bezel_ports)
-    non_bezel_ports = ",".join(non_bezel_ports)
+            # Skip intermediate splitter ports
+            pass
+    undiscovered_ports = ",".join(undiscovered_ports)
+    disable_ports = ",".join(disable_ports)
     print("%s >> Reverting port speed of ports %s to %s" % (
-            switch, ports_to_modify, port_speed))
-    if bezel_ports:
-        run_cmd('switch %s port-config-modify port %s '
-                'disable' % (switch, bezel_ports))
-    if non_bezel_ports:
-        run_cmd('switch %s port-config-modify port %s '
-                'disable' % (switch, non_bezel_ports))
+            switch, undiscovered_ports, port_speed))
     run_cmd('switch %s port-config-modify port %s '
-            'speed %s' % (switch, ports_to_modify, port_speed))
+            'disable' % (switch, disable_ports))
     run_cmd('switch %s port-config-modify port %s '
-            'enable' % (switch, ports_to_modify))
+            'speed %s enable' % (switch, undiscovered_ports, port_speed))
 
 def toggle_ports(switch):
     """
@@ -137,16 +150,32 @@ def toggle_ports(switch):
     max_ports = run_cmd('switch %s port-config-show format port,speed '
                         'parsable-delim ,' % switch)
 
+    all_next_ports = []
     for port_info in max_ports:
         if port_info:
             port, speed = port_info.strip().split(',')
+            all_next_ports.append(str(int(port)+1))
             if g_toggle_ports.get(speed, None):
                 g_toggle_ports[speed]['ports'].append(port)
+
+    # Get info on splitter ports
+    g_splitter_ports = {}
+    all_next_ports = ','.join(all_next_ports)
+    splitter_info = run_cmd('switch %s port-show port %s format port,bezel-port '
+                         'parsable-delim ,' % (switch, all_next_ports))
+    for sinfo in splitter_info:
+        if not sinfo:
+            break
+        _port, _sinfo = sinfo.split(',')
+        _port = int(_port)
+        if '.2' in _sinfo:
+            for i in range(4):
+                g_splitter_ports[str(_port-1 + i)] = 1 + i
 
     for port_speed, port_info in g_toggle_ports.iteritems():
         if port_info['ports']:
             toggle(switch, port_info['ports'], port_info['speeds'], port_speed,
-                   max_ports)
+                   g_splitter_ports)
 
 ##################
 # Get list of fabric nodes
