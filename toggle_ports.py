@@ -8,6 +8,39 @@ import sys
 import re
 
 ##################
+Sample Output
+##################
+"""
+root@hmplabpsq-we50600:# cli
+Netvisor OS Command Line Interface 3.0
+Connected to Switch hmplabpsq-we50600; nvOS Identifier:0x9000656; Ver: 3.0.3000012625
+sCLI (network-admin@hmplabpsq-we50600) > switch-local lldp-show
+
+root@hmplabpsq-we50600:# python toggle_ports.py
+### Toggling ports for switch hmplabpsq-we50600, from 100g to ['10g', '25g', '40g']
+hmplabpsq-we50600(100g) >> Toggling ports 49-52,53-56,57-60,61-64,65-68,69-72 to 10g
+hmplabpsq-we50600(100g) >> Toggling ports 49-52,53-56,57-60,61-64,65-68,69-72 to 25g
+hmplabpsq-we50600(100g) >> Toggling ports 49-52,53-56,57-60,61-64,65-68,69-72 to 40g
+hmplabpsq-we50600 >> Reverting port speed of ports 49,57,61,69 to 100g
+### Toggling ports for switch hmplabpsq-we50600, from 25g to ['10g']
+hmplabpsq-we50600(25g) >> Toggling ports 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40 to 10g
+hmplabpsq-we50600 >> Reverting port speed of ports 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40 to 25g
+### Toggling ports for switch hmplabpsq-we60100, from 40g to ['10g']
+hmplabpsq-we60100(40g) >> Toggling ports 5-8,13-16,21-24,25-28,29-32,37-40,45-48,49,50,51,52,57-60,61-64,65-68,69-72,73-76,77-80,81-84,85-88,89-92,93-96,97-100,101,102,104 to 10g
+hmplabpsq-we60100 >> Reverting port speed of ports 5,13,21,25,29,37,45,49,50,51,52,57,61,65,69,73,77,81,85,89,93,97,101,102,104 to 40g
+
+root@hmplabpsq-we50600:# cli
+Netvisor OS Command Line Interface 3.0
+Connected to Switch hmplabpsq-we50600; nvOS Identifier:0x9000656; Ver: 3.0.3000012625
+CLI (network-admin@hmplabpsq-we50600) > switch-local lldp-show
+switch            local-port chassis-id port-id port-desc           sys-name
+----------------- ---------- ---------- ------- ------------------- -----------------
+hmplabpsq-we50600 53         0b000aae   103     PN Switch Port(103) hmplabpsq-we60100
+hmplabpsq-we50600 65         0b000ac8   103     PN Switch Port(103) hmplabpsq-we60200
+"""
+##################
+
+##################
 # ARGUMENT PARSING
 ##################
 
