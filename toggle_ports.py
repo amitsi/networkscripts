@@ -8,7 +8,7 @@ import sys
 import re
 
 ##################
-Sample Output
+# Sample Output
 ##################
 """
 root@hmplabpsq-we50600:# cli
