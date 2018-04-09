@@ -8,7 +8,7 @@ import sys
 import re
 
 ##################
-Sample Output
+# Sample Output
 ##################
 """
 root@hmplabpsq-we50600:# cli
@@ -95,13 +95,14 @@ def sleep(sec):
 
 ##################
 
-def toggle(switch, toggle_ports, toggle_speed, port_speed, splitter_ports):
+def toggle(switch, toggle_ports, toggle_speed, port_speed, splitter_ports, quad_ports):
     """
     Method to toggle ports for topology discovery
     :return: The output messages for assignment.
     """
     print("### Toggling ports for switch %s, from %s to %s" % (
             switch, port_speed, toggle_speed))
+
     for speed in toggle_speed:
         # Check if the speed to be converted can be for all the ports
         # or just first port. For ex: 40 can only be set for first port
@@ -128,6 +129,9 @@ def toggle(switch, toggle_ports, toggle_speed, port_speed, splitter_ports):
                 non_splittable_ports.append(_port)
         undiscovered_ports = ",".join(undiscovered_ports)
 
+        if not undiscovered_ports:
+            continue
+
         print("%s(%s) >> Toggling ports %s to %s" % (
             switch, port_speed, undiscovered_ports, speed))
         run_cmd('switch %s port-config-modify port %s '
@@ -150,7 +154,10 @@ def toggle(switch, toggle_ports, toggle_speed, port_speed, splitter_ports):
     disable_ports = []
     undiscovered_ports = []
     for _port in _undiscovered_ports:
-        if splitter_ports.get(_port, 0) == 1:
+        if _port in quad_ports:
+            disable_ports.append(str(_port))
+            # dont add to undiscovered ports
+        elif splitter_ports.get(_port, 0) == 1:
             disable_ports.append("%s-%s" % (_port, int(_port)+3))
             undiscovered_ports.append(_port)
         elif splitter_ports.get(_port, 0) == 0:
@@ -159,12 +166,17 @@ def toggle(switch, toggle_ports, toggle_speed, port_speed, splitter_ports):
         else:
             # Skip intermediate splitter ports
             pass
-    undiscovered_ports = ",".join(undiscovered_ports)
+
     disable_ports = ",".join(disable_ports)
+    if disable_ports:
+        run_cmd('switch %s port-config-modify port %s '
+                'disable' % (switch, disable_ports))
+
+    undiscovered_ports = ",".join(undiscovered_ports)
+    if not undiscovered_ports:
+        return
     print("%s >> Reverting port speed of ports %s to %s" % (
             switch, undiscovered_ports, port_speed))
-    run_cmd('switch %s port-config-modify port %s '
-            'disable' % (switch, disable_ports))
     run_cmd('switch %s port-config-modify port %s '
             'speed %s enable' % (switch, undiscovered_ports, port_speed))
 
@@ -205,10 +217,23 @@ def toggle_ports(switch):
             for i in range(4):
                 g_splitter_ports[str(_port-1 + i)] = 1 + i
 
+    # Get info on Quad Ports
+    g_quad_ports = {'25g': []}
+    model_info = run_cmd('switch %s switch-info-show format model, layout horizontal '
+                         'parsable-delim ,' % (switch))
+    for modinfo in model_info:
+        if not modinfo:
+            break
+        model = modinfo
+        if model == "ACCTON-AS7316-54X" and g_toggle_ports.get('25g', None):
+            for _port in g_toggle_ports['25g']['ports']:
+                if _port not in g_splitter_ports:
+                    g_quad_ports['25g'].append(_port)
+
     for port_speed, port_info in g_toggle_ports.iteritems():
         if port_info['ports']:
             toggle(switch, port_info['ports'], port_info['speeds'], port_speed,
-                   g_splitter_ports)
+                   g_splitter_ports, g_quad_ports.get(port_speed, []))
 
 ##################
 # Get list of fabric nodes
