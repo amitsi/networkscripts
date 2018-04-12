@@ -7,11 +7,15 @@ import subprocess
 import time
 import sys
 import signal
+import logging
 
 seed_switch = "10.14.30.13" # Used to access CLI
 g_test_interval = 2 # in minutes
 
 g_fmsg = []
+
+logging.basicConfig(filename="conn_test.log", level=logging.INFO,
+                    format='%(asctime)s %(message)s')
 
 def cmd_exists(cmd):
     return subprocess.call("type " + cmd, shell=True,
@@ -27,6 +31,7 @@ def sys_print(msg, nl=True):
 
 def signal_handler(signal, frame):
         sys_print('Exiting...')
+        logging.error("Done")
         sys.exit(0)
 
 def enable_shell():
@@ -55,48 +60,68 @@ def is_ipv6(ip_addr):
 
 def vr_ping_test(vrname, ip_addr):
     global g_fmsg
-    message = run_cmd("vrouter-ping vrouter-name %s host-ip %s "
-                      "count 1" % (vrname, ip_addr))
+    cmd = ("vrouter-ping vrouter-name %s host-ip %s "
+           "count 1" % (vrname, ip_addr))
+    message = run_cmd(cmd)
 
     message = '\n'.join(message)
     if ('unreachable' in message or 'Unreachable' in message or
             '100% packet loss' in message):
         g_fmsg.append(vrname + " ====> " + ip_addr + " = Ping failed")
+        logging.error(g_fmsg[-1])
+        logging.error(cmd)
+        logging.error(message)
+        logging.error("="*20)
         return False
     return True
 
 def snmp_test(swname, ip_addr):
     global g_fmsg
     if is_ipv6(ip_addr):
-        output = run_cmd("snmpwalk  -v2c -mAll -c football udp6:[%s] "
-                         "2>&1 | head" % (ip_addr), shell=True, local=True)
+        cmd = ("snmpwalk  -v2c -mAll -c football udp6:[%s] "
+               "2>&1 | head" % (ip_addr))
     else:
-        output = run_cmd("snmpwalk  -v2c -mAll -c football %s "
-                         "2>&1 | head 2>&1" % (ip_addr), shell=True, local=True)
+        cmd = ("snmpwalk  -v2c -mAll -c football %s "
+               "2>&1 | head 2>&1" % (ip_addr))
 
+    output = run_cmd(cmd, shell=True, local=True)
     if swname in ",".join(output):
         return True
     g_fmsg.append(swname + " ==== " + ip_addr + " = SNMP walk failed")
+    logging.error(g_fmsg[-1])
+    logging.error(cmd)
+    logging.error(output)
+    logging.error("="*20)
     return False
 
 def ssh_test(swname, ip_addr):
     global g_fmsg
-    output = run_cmd("hostname", switch=ip_addr, shell=True)
+    cmd = ("switch-setup-show format switch-name")
+    output = run_cmd(cmd, switch=ip_addr, shell=False)
     if swname in ",".join(output):
         return True
     g_fmsg.append(swname + " ==== " + ip_addr + " = SSH failed")
+    logging.error(g_fmsg[-1])
+    logging.error(cmd)
+    logging.error(output)
+    logging.error("="*20)
     return False
 
 def ping_test(swname, ip_addr):
     if is_ipv6(ip_addr):
-        message = run_cmd("ping6 -c 1 %s" % (ip_addr), shell=True, local=True)
+        cmd = ("ping6 -c 1 %s" % (ip_addr))
     else:
-        message = run_cmd("ping -c 1 %s" % (ip_addr), shell=True, local=True)
+        cmd = ("ping -c 1 %s" % (ip_addr))
 
+    message = run_cmd(cmd, shell=True, local=True)
     message = '\n'.join(message)
     if ('unreachable' in message or 'Unreachable' in message or
             '100% packet loss' in message):
         g_fmsg.append(swname + " ==== " + ip_addr + " = Ping failed")
+        logging.error(g_fmsg[-1])
+        logging.error(cmd)
+        logging.error(message)
+        logging.error("="*20)
         return False
     return True
 
@@ -182,6 +207,7 @@ def init():
     enable_shell()
 
 if __name__ == '__main__':
+    logging.error("Starting connectivity tests....")
     init();
     sys_print("Fetching all Mgmt IPs, In-Band IPs, Loopback IPs, l3 link IPs...", nl=False)
     vr_ips = get_vr_ips()
@@ -192,6 +218,7 @@ if __name__ == '__main__':
         print_header("local ping/ssh/snmp", "all mgmt-v4/v6, "
                      "inband-v4/v6, loopback-v4/v6 ", 0, tail=False)
         sys_print("")
+        sys_print("[Note: Errors are logged in conn_test.log file]")
         for swname in all_gips:
             perform_global_tests("local ping/ssh/snmp", "all %s mgmt-v4/v6, "
                                  "inband-v4/v6, loopback-v4/v6 "
