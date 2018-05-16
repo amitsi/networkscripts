@@ -1,6 +1,37 @@
 #!/usr/bin/python
 
-""" PN Vrouter Full Mesh Ping Test """
+""" 
+PN Multi Vrouter Full Mesh Ping Test
+
+This script does full mesh ping between different Fabrics
+It is dual stack capable
+It will also report Ping Latency
+
+Example Run:-
+
+@amitsingh  python multi_fabric_fullmesh_ping.py -s ghspine01 -r ghspine-ursa -v
+
+Supported Options:-
+
+python multi_fabric_fullmesh_ping.py -h
+usage: multi_fabric_fullmesh_ping.py [-h] [-c COUNT] -s SEED_SWITCH
+                                     [-r REMOTE_SEED_SWITCH] [-d] [-a] [-v]
+
+Full Mesh Ping
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c COUNT, --count COUNT
+                        number of times to run this script
+  -s SEED_SWITCH, --seed-switch SEED_SWITCH
+                        fabric seed switch
+  -r REMOTE_SEED_SWITCH, --remote-seed-switch REMOTE_SEED_SWITCH
+                        remote fabric seed switch
+  -d, --dual-stack      ping ipv6 interfaces as well
+  -a, --all             ping all interfaces including vlan based interfaces
+  -v, --verbose         verbose mode
+
+"""
 
 from __future__ import print_function
 import subprocess
