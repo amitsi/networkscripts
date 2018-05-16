@@ -35,3 +35,85 @@ aquarius-ext-leaf2-vrouter         10.16.109.3/24 eth2.109 109  true       up
 aquarius-ext-leaf2-vrouter 15      10.16.109.1/24 eth3.109 109             down      slave      
 Warning! dorado-ext-leaf1's time is not in sync with the NTP Server.
 CLI (network-admin@dorado-ext-leaf1) > 
+
+
+
+
+
+
+root@auto-server:~# python multi_fabric_fullmesh_ping.py -s ghspine01 -r ghspine-ursa -v
+Fetching all l3 link IPs from ghspine01...Done
+
+Fetching all l3 link IPs from remote fabric switch ghspine-ursa...Done
+
+Performing ping test:
+=====================
+  From ghq-spine1-hw-Campus to all l3 links : Failure
+  > Passed for following IPs:
+    * 10.60.7.37 - round-trip (ms)  min/avg/max/stddev = 0.223/0.223/0.223/-NaN
+    * 10.60.26.141 - round-trip (ms)  min/avg/max/stddev = 0.193/0.193/0.193/-NaN
+    * 10.60.7.29 - round-trip (ms)  min/avg/max/stddev = 0.196/0.196/0.196/-NaN
+    * 10.60.30.5 - round-trip (ms)  min/avg/max/stddev = 0.188/0.188/0.188/-NaN
+    * 10.60.30.13 - round-trip (ms)  min/avg/max/stddev = 0.226/0.226/0.226/-NaN
+    * 10.60.26.129 - round-trip (ms)  min/avg/max/stddev = 0.162/0.162/0.162/-NaN
+    * 10.60.26.121 - round-trip (ms)  min/avg/max/stddev = 0.393/0.393/0.393/-NaN
+  > Failed for following IPs:
+    * 10.60.7.53
+    * 10.60.7.45
+    * 10.60.7.21
+    * 10.60.7.5
+    * 10.60.7.13
+    * 10.60.26.133
+    * 10.60.26.125
+  From ghq-spine1-hw-Campus to all l3 links of remote vrouter ghq-spine1-hw-WAN: Success
+  > Passed for following IPs:
+    * 10.60.26.2 - round-trip (ms)  min/avg/max/stddev = 0.250/0.250/0.250/-NaN
+    * 10.60.26.13 - round-trip (ms)  min/avg/max/stddev = 0.384/0.384/0.384/-NaN
+    * 10.60.26.121 - round-trip (ms)  min/avg/max/stddev = 0.208/0.208/0.208/-NaN
+  From ghq-spine1-hw-Campus to all l3 links of remote vrouter uss-spine1-hw-WAN: Success
+  > Passed for following IPs:
+    * 10.60.26.6 - round-trip (ms)  min/avg/max/stddev = 0.190/0.190/0.190/-NaN
+    * 10.60.26.10 - round-trip (ms)  min/avg/max/stddev = 0.194/0.194/0.194/-NaN
+    * 10.60.26.129 - round-trip (ms)  min/avg/max/stddev = 0.220/0.220/0.220/-NaN
+  From uss-spine1-hw-Campus to all l3 links : Failure
+  > Passed for following IPs:
+    * 10.60.26.137 - round-trip (ms)  min/avg/max/stddev = 0.218/0.218/0.218/-NaN
+    * 10.60.7.25 - round-trip (ms)  min/avg/max/stddev = 0.226/0.226/0.226/-NaN
+    * 10.60.30.1 - round-trip (ms)  min/avg/max/stddev = 0.233/0.233/0.233/-NaN
+    * 10.60.30.9 - round-trip (ms)  min/avg/max/stddev = 0.235/0.235/0.235/-NaN
+    * 10.60.26.129 - round-trip (ms)  min/avg/max/stddev = 0.218/0.218/0.218/-NaN
+    * 10.60.26.121 - round-trip (ms)  min/avg/max/stddev = 0.213/0.213/0.213/-NaN
+  > Failed for following IPs:
+    * 10.60.6.37
+    * 10.60.7.33
+    * 10.60.7.49
+    * 10.60.7.41
+    * 10.60.7.17
+    * 10.60.7.1
+    * 10.60.7.9
+    * 10.60.26.133
+    * 10.60.26.125
+  From uss-spine1-hw-Campus to all l3 links of remote vrouter ghq-spine1-hw-WAN: Success
+  > Passed for following IPs:
+    * 10.60.26.2 - round-trip (ms)  min/avg/max/stddev = 0.235/0.235/0.235/-NaN
+    * 10.60.26.13 - round-trip (ms)  min/avg/max/stddev = 0.188/0.188/0.188/-NaN
+    * 10.60.26.121 - round-trip (ms)  min/avg/max/stddev = 0.185/0.185/0.185/-NaN
+Supported options:
+
+# python multi_fabric_fullmesh_ping.py -h
+usage: multi_fabric_fullmesh_ping.py [-h] [-c COUNT] -s SEED_SWITCH
+                                     [-r REMOTE_SEED_SWITCH] [-d] [-a] [-v]
+
+Full Mesh Ping
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c COUNT, --count COUNT
+                        number of times to run this script
+  -s SEED_SWITCH, --seed-switch SEED_SWITCH
+                        fabric seed switch
+  -r REMOTE_SEED_SWITCH, --remote-seed-switch REMOTE_SEED_SWITCH
+                        remote fabric seed switch
+  -d, --dual-stack      ping ipv6 interfaces as well
+  -a, --all             ping all interfaces including vlan based interfaces
+  -v, --verbose         verbose mode
