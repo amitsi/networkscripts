@@ -6,6 +6,7 @@ PN Multi Vrouter Full Mesh Ping Test
 This script does full mesh ping between different Fabrics
 It is dual stack capable
 It will also report Ping Latency
+Will Skip disabled vrouters
 
 Example Run:-
 
