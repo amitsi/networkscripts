@@ -39,6 +39,7 @@ import time
 import sys
 import argparse
 import signal
+import os
 
 g_ping_interval = 3 # in minutes
 
@@ -122,6 +123,13 @@ def sys_exit(msg=None):
         sys_print(msg)
     exit(0)
 
+def bin_exists(program):
+    for path in os.environ["PATH"].split(os.pathsep):
+        exe_file = os.path.join(path, program)
+        if os.path.isfile(exe_file) and os.access(exe_file, os.X_OK):
+            return True
+    return False
+
 def run_cmd(cmd, switch=None):
     if switch:
         cmd_prefix = ("sshpass -p test123 ssh -q -oStrictHostKeyChecking=no "
@@ -146,20 +154,37 @@ def is_reachable(vrname, ip_addr, switch=None):
         out = run_cmd("ping -c 1 %s" % (ip_addr), switch)
 
     message = '\n'.join(out)
+    info = []
     if ('unreachable' in message or 'Unreachable' in message or
             '100% packet loss' in message):
-        return (False, "")
-    rtt = ""
+        return (False, info)
     for msg in out:
-        if "round-trip" in msg:
-            rtt = msg
+        if "icmp_seq=" in msg:
+            msg = msg.split()
+            for m in msg:
+                if "ttl" in m:
+                    info.append(m.replace("ttl", "nhops"))
+                if "time" in m:
+                    info.append(m + "(ms)")
             break
-    return (True, rtt)
+    return (True, info)
 
 def spinning_cursor():
     while True:
         for cursor in '|/-\\':
             yield cursor
+
+def get_vr(switch=None):
+    vr_info = run_cmd("vrouter-show format name,state parsable-delim ,", switch)
+    vrs = {}
+    for vr_info in vr_info:
+        if not vr_info:
+            sys_exit("No router exists")
+        if ',' not in vr_info:
+            continue
+        vrname, state = vr_info.split(',')
+        vrs[vrname] = state
+    return vrs
 
 def get_vr_ips(switch=None):
     intf_info = run_cmd("vrouter-interface-show format l3-port,ip,%svrrp-state "
@@ -209,6 +234,9 @@ def update_progress(vrname, fmsg, smsg):
         for msg in fmsg:
             sys_print(" "*4 + "* " + msg)
 
+if not bin_exists("sshpass"):
+    sys_exit("Please install sshpass to run this program")
+
 result, _ = is_reachable(None, seed_switch)
 if not result:
     sys_exit("Switch %s is not reachable" % seed_switch)
@@ -221,11 +249,13 @@ if remote_seed_switch:
 signal.signal(signal.SIGINT, signal_handler)
 spinner = spinning_cursor()
 sys_print("Fetching all l3 link IPs from %s..." % seed_switch, nl=False)
+vrs = get_vr(seed_switch)
 vr_ips = get_vr_ips(seed_switch)
 sys_print("Done\n")
 if remote_seed_switch:
     sys_print("Fetching all l3 link IPs from remote fabric switch "
               "%s..." % remote_seed_switch, nl=False)
+    rem_vrs = get_vr(remote_seed_switch)
     rem_vr_ips = get_vr_ips(remote_seed_switch)
     sys_print("Done\n")
 vrlen = len(vr_ips)
@@ -236,6 +266,9 @@ for _i in range(g_count):
         sys_print("Waiting for %s minute(s)" % g_ping_interval)
         time.sleep(60*g_ping_interval)
     for vrname in vr_ips:
+        if vrs[vrname] != "enabled":
+            sys_print("  [Note: Skipping vrouter %s as it is disabled ]" % (vrname))
+            continue
         sys_print("  From %s to all l3 links : " % (vrname), nl=False)
         fmsg = []
         smsg = []
@@ -245,13 +278,13 @@ for _i in range(g_count):
             else:
                 for ip in vr_ips[vr]:
                     sys_write(spinner.next())
-                    result, rtt = is_reachable(vrname, ip, seed_switch)
+                    result, info = is_reachable(vrname, ip, seed_switch)
                     if not result:
                         fail = True
                         fmsg.append(ip)
                     else:
-                        if rtt:
-                            smsg.append(ip + " - " + rtt)
+                        if info:
+                            smsg.append(ip + " - " + ", ".join(info))
                         else:
                             smsg.append(ip)
                     time.sleep(0.5)
@@ -261,17 +294,20 @@ for _i in range(g_count):
             for rem_vr in rem_vr_ips:
                 fmsg = []
                 smsg = []
+                if rem_vrs[rem_vr] != "enabled":
+                    sys_print("  [Note: Skipping remote fabric vrouter %s as it is disabled ]" % (rem_vr))
+                    continue
                 sys_print("  From %s to all l3 links of remote vrouter "
                           "%s: " % (vrname, rem_vr), nl=False)
                 for ip in rem_vr_ips[rem_vr]:
                     sys_write(spinner.next())
-                    result, rtt = is_reachable(vrname, ip, seed_switch)
+                    result, info = is_reachable(vrname, ip, seed_switch)
                     if not result:
                         fail = True
                         fmsg.append(ip)
                     else:
-                        if rtt:
-                            smsg.append(ip + " - " + rtt)
+                        if info:
+                            smsg.append(ip + " - " + ", ".join(info))
                         else:
                             smsg.append(ip)
                     time.sleep(0.5)
