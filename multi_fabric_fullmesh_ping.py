@@ -8,6 +8,7 @@ import time
 import sys
 import argparse
 import signal
+import os
 
 g_ping_interval = 3 # in minutes
 
@@ -90,6 +91,13 @@ def sys_exit(msg=None):
     if msg:
         sys_print(msg)
     exit(0)
+
+def bin_exists(program):
+    for path in os.environ["PATH"].split(os.pathsep):
+        exe_file = os.path.join(path, program)
+        if os.path.isfile(exe_file) and os.access(exe_file, os.X_OK):
+            return True
+    return False
 
 def run_cmd(cmd, switch=None):
     if switch:
@@ -194,6 +202,9 @@ def update_progress(vrname, fmsg, smsg):
         sys_print("  > Failed for following IPs:")
         for msg in fmsg:
             sys_print(" "*4 + "* " + msg)
+
+if not bin_exists("sshpass"):
+    sys_exit("Please install sshpass to run this program")
 
 result, _ = is_reachable(None, seed_switch)
 if not result:
