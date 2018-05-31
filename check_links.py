@@ -2,7 +2,7 @@
 
 """
 Features:
-* Full mesh ping to all l3/vlan-based interfaces
+* Full mesh ping to all l3 interfaces
 * Ping/SNMP/SSH test to all global IPs (Mgmt/Inband/Loopback)
 * Tests IPv4 & IPv6 addresses
 * Reports ping latency
@@ -29,7 +29,7 @@ Example Run:-
 [*] Checking reachability to seed switch...Done
 [*] Enabling shell access on seed switch...Done
 [*] Fetching all global IPs from 10.14.30.11...Done
-[*] Fetching all l3/vlan-based link IPs from 10.14.30.11...Done
+[*] Fetching all l3 link IPs from 10.14.30.11...Done
 
 From local to mgmt-v4 IP 10.14.30.20 of switch ara-L3-01 :
   * Ping : Pass (ttl=64, time=0.148ms)
@@ -50,7 +50,7 @@ From local to inband-v4 IP 104.255.62.40 of switch ara-L3-01 :
 .
 .
 
-[Ping] From dorado21-vrouter to all l3/vlan-based links of dorado19-vrouter :
+[Ping] From dorado21-vrouter to all l3 links of dorado19-vrouter :
   * 106.10.1.2 : Pass (ttl=64, time=2.07ms)
   * 62:4:12:1::2 : Pass (ttl=64, time=2.05ms)
   * 106.10.1.1 : Fail (interface is down)
@@ -172,7 +172,7 @@ class PNClass(object):
         self.spinner.stop()
         self.sys_print("Done")
 
-        self.sys_print("[*] Fetching all l3/vlan-based link IPs from %s..." % self.seed_switch, nl=False)
+        self.sys_print("[*] Fetching all l3 link IPs from %s..." % self.seed_switch, nl=False)
         self.spinner.start()
         self.vrs = self.get_vr()
         self.vr_ips = self.get_vr_ips()
@@ -369,6 +369,8 @@ class PNClass(object):
             vrname,l3_port,ip1_cidr,ip2_cidr,vrrp_state = intf.split(',')
             if vrrp_state == "slave":
                 continue
+            if not l3_port:
+                continue
             ip1 = ip1_cidr.split('/')[0]
             if vr_ips.get(vrname, None):
                 vr_ips[vrname].append(ip1)
@@ -391,7 +393,7 @@ class PNClass(object):
                 if vrname == vr:
                     continue
                 else:
-                    self.sys_print("[Ping] From %s to all l3/vlan-based links of %s :" % (vrname, vr), nl=True)
+                    self.sys_print("[Ping] From %s to all l3 links of %s :" % (vrname, vr), nl=True)
                     for ip in self.vr_ips[vr]:
                         self.ping_test(vrname, ip, l3_test=True)
                     self.sys_print()
