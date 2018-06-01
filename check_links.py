@@ -2,7 +2,7 @@
 
 """
 Features:
-* Full mesh ping to all l3/vlan-based interfaces
+* Full mesh ping to all l3 interfaces
 * Ping/SNMP/SSH test to all global IPs (Mgmt/Inband/Loopback)
 * Tests IPv4 & IPv6 addresses
 * Reports ping latency
@@ -29,7 +29,7 @@ Example Run:-
 [*] Checking reachability to seed switch...Done
 [*] Enabling shell access on seed switch...Done
 [*] Fetching all global IPs from 10.14.30.11...Done
-[*] Fetching all l3/vlan-based link IPs from 10.14.30.11...Done
+[*] Fetching all l3 link IPs from 10.14.30.11...Done
 
 From local to mgmt-v4 IP 10.14.30.20 of switch ara-L3-01 :
   * Ping : Pass (ttl=64, time=0.148ms)
@@ -50,7 +50,7 @@ From local to inband-v4 IP 104.255.62.40 of switch ara-L3-01 :
 .
 .
 
-[Ping] From dorado21-vrouter to all l3/vlan-based links of dorado19-vrouter :
+[Ping] From dorado21-vrouter to all l3 links of dorado19-vrouter :
   * 106.10.1.2 : Pass (ttl=64, time=2.07ms)
   * 62:4:12:1::2 : Pass (ttl=64, time=2.05ms)
   * 106.10.1.1 : Fail (interface is down)
@@ -68,6 +68,7 @@ from __future__ import print_function
 import subprocess
 import threading
 import argparse
+import logging
 import signal
 import time
 import sys
@@ -96,6 +97,12 @@ parser.add_argument(
     '-s', '--seed-switch',
     help='fabric seed switch',
     required=True
+)
+parser.add_argument(
+    '-d', '--debug',
+    help='debug mode',
+    action='store_true',
+    required=False
 )
 args = vars(parser.parse_args())
 
@@ -141,6 +148,10 @@ class PNClass(object):
         signal.signal(signal.SIGINT, self.signal_handler)
         self.spinner = Spinner()
 
+        logging.basicConfig(filename="check_links.log", level=logging.INFO,
+                            format='%(asctime)s [%(levelname)s] %(message)s')
+        logging.info("Starting check_links tests....")
+
         self.sys_print("[*] Checking reachability to seed switch...", nl=False)
         self.spinner.start()
         result = self.ping_test(None, self.seed_switch, quiet=True)
@@ -161,13 +172,14 @@ class PNClass(object):
         self.spinner.stop()
         self.sys_print("Done")
 
-        self.sys_print("[*] Fetching all l3/vlan-based link IPs from %s..." % self.seed_switch, nl=False)
+        self.sys_print("[*] Fetching all l3 link IPs from %s..." % self.seed_switch, nl=False)
         self.spinner.start()
         self.vrs = self.get_vr()
         self.vr_ips = self.get_vr_ips()
         self.spinner.stop()
         self.sys_print("Done")
 
+        self.sys_print("[*] Note: Failures are logged in check_links.log file")
         self.sys_print()
 
     def sys_print(self, msg="", nl=True):
@@ -192,29 +204,38 @@ class PNClass(object):
 
     def signal_handler(self, signal, frame):
             self.sys_print('Exiting...', nl=False)
+            logging.info("Exit from script")
             self.sys_exit("Done")
 
     def enable_shell(self):
         self.run_cmd("switch-local role-modify name network-admin shell")
 
-    def run_cmd(self, cmd, shell=False, local=False, other_switch=None):
+    def run_cmd(self, cmd, cli_shell=False, local=False, other_switch=None):
         if other_switch:
             cmd_prefix = ("sshpass -p %s ssh -q -oStrictHostKeyChecking=no "
-                          "-oConnectTimeout=10 %s@%s -- --quiet" % (
+                          "-oConnectTimeout=10 %s@%s -- --quiet " % (
                           self.password, self.username, other_switch))
         elif self.seed_switch and not local:
             cmd_prefix = ("sshpass -p %s ssh -q -oStrictHostKeyChecking=no "
-                          "-oConnectTimeout=10 %s@%s -- --quiet" % (
+                          "-oConnectTimeout=10 %s@%s -- --quiet " % (
                           self.password, self.username, self.seed_switch))
+        elif local:
+            cmd_prefix = ""
         else:
-            cmd_prefix = "cli"
-        cmd_exec = "%s %s%s 2>&1" % (cmd_prefix, "shell " if shell else "", cmd)
+            cmd_prefix = "cli "
+        cmd_exec = "%s%s%s 2>&1" % (cmd_prefix, "shell " if cli_shell else "", cmd)
+        if args["debug"]:
+            logging.info("Running cmd: %s" % cmd_exec)
         try:
             proc = subprocess.Popen(cmd_exec, shell=True, stdout=subprocess.PIPE)
             output = proc.communicate()[0]
-            return output.strip().split('\n')
+            output = output.strip().split('\n')
+            if args["debug"]:
+                logging.info("Cmd output: %s" % output)
+            return output
         except:
             self.spinner.busy = False
+            logging.error("Failed running cmd: %s" % cmd_exec)
             self.sys_exit("Failed running cmd %s" % cmd)
 
     def is_ipv6(self, ip_addr):
@@ -227,17 +248,21 @@ class PNClass(object):
             return
 
         if vrname:
-            out = self.run_cmd("vrouter-ping vrouter-name %s host-ip %s "
-                               "count 1" % (vrname, ip_addr))
+            ping_cmd = ("vrouter-ping vrouter-name %s host-ip %s "
+                        "count 1" % (vrname, ip_addr))
+            out = self.run_cmd(ping_cmd)
         else:
             if self.is_ipv6(ip_addr):
-                out = self.run_cmd("ping6 -c 1 %s" % (ip_addr), shell=True, local=local)
+                ping_cmd = "ping6 -c 1 %s" % (ip_addr)
             else:
-                out = self.run_cmd("ping -c 1 %s" % (ip_addr), shell=True, local=local)
+                ping_cmd = "ping -c 1 %s" % (ip_addr)
+            out = self.run_cmd(ping_cmd, local=local)
 
         message = '\n'.join(out)
         if ('unreachable' in message or 'Unreachable' in message or
                 '100% packet loss' in message):
+            logging.error("Ping failure for cmd: %s" % ping_cmd)
+            logging.error("Ping failure output: %s" % message)
             if quiet:
                 return False
             if not l3_test:
@@ -246,6 +271,8 @@ class PNClass(object):
                 self.sys_print("  * %s : Fail" % (ip_addr))
             return False
         if ('interface is down' in message):
+            logging.error("Ping failed for cmd: %s" % ping_cmd)
+            logging.error("Ping failure output: %s" % message)
             if quiet:
                 return False
             if not l3_test:
@@ -279,23 +306,29 @@ class PNClass(object):
 
     def snmp_test(self, swname, ip_addr):
         if self.is_ipv6(ip_addr):
-            output = self.run_cmd("snmpwalk  -v2c -mAll -c football udp6:[%s] "
-                                  "2>&1 | head" % (ip_addr), shell=True, local=True)
+            snmp_cmd = ("snmpget -v2c -mAll -c football udp6:[%s] "
+                        "iso.3.6.1.2.1.1.5.0" % (ip_addr))
         else:
-            output = self.run_cmd("snmpwalk  -v2c -mAll -c football %s "
-                                  "2>&1 | head 2>&1" % (ip_addr), shell=True, local=True)
+            snmp_cmd = ("snmpget -v2c -mAll -c football %s "
+                        "iso.3.6.1.2.1.1.5.0" % (ip_addr))
+        output = self.run_cmd(snmp_cmd, local=True)
 
         if swname in ",".join(output):
             self.sys_print("  * SNMP : Pass")
             return True
+        logging.error("SNMP failed for cmd: %s" % snmp_cmd)
+        logging.error("SNMP failure output: %s" % output)
         self.sys_print("  * SNMP : Fail")
         return False
 
     def ssh_test(self, swname, ip_addr):
-        output = self.run_cmd("hostname", other_switch=ip_addr, shell=True)
+        ssh_cmd = "hostname"
+        output = self.run_cmd(ssh_cmd, other_switch=ip_addr, cli_shell=True)
         if swname in ",".join(output):
             self.sys_print("  * SSH  : Pass")
             return True
+        logging.error("SSH failed for cmd: %s" % ssh_cmd)
+        logging.error("SSH failure output: %s" % output)
         self.sys_print("  * SSH  : Fail")
         return False
 
@@ -336,6 +369,8 @@ class PNClass(object):
             vrname,l3_port,ip1_cidr,ip2_cidr,vrrp_state = intf.split(',')
             if vrrp_state == "slave":
                 continue
+            if not l3_port:
+                continue
             ip1 = ip1_cidr.split('/')[0]
             if vr_ips.get(vrname, None):
                 vr_ips[vrname].append(ip1)
@@ -358,7 +393,7 @@ class PNClass(object):
                 if vrname == vr:
                     continue
                 else:
-                    self.sys_print("[Ping] From %s to all l3/vlan-based links of %s :" % (vrname, vr), nl=True)
+                    self.sys_print("[Ping] From %s to all l3 links of %s :" % (vrname, vr), nl=True)
                     for ip in self.vr_ips[vr]:
                         self.ping_test(vrname, ip, l3_test=True)
                     self.sys_print()
@@ -368,37 +403,37 @@ class PNClass(object):
             mgmt,mgmt6,inband,inband6,loopback,loopback6 = self.all_gips[swname]
             if mgmt:
                 self.sys_print("From local to mgmt-v4 IP %s of switch %s :" % (mgmt, swname))
-                self.ping_test(None, mgmt)
+                self.ping_test(None, mgmt, local=True)
                 self.ssh_test(swname, mgmt)
                 self.snmp_test(swname, mgmt)
                 self.sys_print()
             if mgmt6:
                 self.sys_print("From local to mgmt-v6 IP %s of switch %s :" % (mgmt6, swname))
-                self.ping_test(None, mgmt6)
+                self.ping_test(None, mgmt6, local=True)
                 self.ssh_test(swname, mgmt6)
                 self.snmp_test(swname, mgmt6)
                 self.sys_print()
             if inband:
                 self.sys_print("From local to inband-v4 IP %s of switch %s :" % (inband, swname))
-                self.ping_test(None, inband)
+                self.ping_test(None, inband, local=True)
                 self.ssh_test(swname, inband)
                 self.snmp_test(swname, inband)
                 self.sys_print()
             if inband6:
                 self.sys_print("From local to inband-v6 IP %s of switch %s :" % (inband6, swname))
-                self.ping_test(None, inband6)
+                self.ping_test(None, inband6, local=True)
                 self.ssh_test(swname, inband6)
                 self.snmp_test(swname, inband6)
                 self.sys_print()
             if loopback:
                 self.sys_print("From local to loopback-v4 IP %s of switch %s :" % (loopback, swname))
-                self.ping_test(None, loopback)
+                self.ping_test(None, loopback, local=True)
                 self.ssh_test(swname, loopback)
                 self.snmp_test(swname, loopback)
                 self.sys_print()
             if loopback6:
                 self.sys_print("From local to loopback-v6 IP %s of switch %s :" % (loopback6, swname))
-                self.ping_test(None, loopback6)
+                self.ping_test(None, loopback6, local=True)
                 self.ssh_test(swname, loopback6)
                 self.snmp_test(swname, loopback6)
                 self.sys_print()
