@@ -3,11 +3,13 @@
 DEBUG=false
 USER='root'
 PASSWORD='test123'
+ROLE='network-admin'
 SSHPASS=$( which sshpass )
 ARCHIVE_LOGS=false
 SHELL_TYPE=shell
 SFTP_EXPORT='/nvOS/export/'
 LOGDIR='/var/nvOS/log/'
+STOP_AFTER_FIRST=false
 
 usage() {
 	cat <<_USAGE
@@ -15,8 +17,9 @@ usage: $0 [options] switch
 
   -u USER	user to SSH into the switch as
   -p PASS	password for user
-  -s SSHPASS	path to sshpass command
+  -r ROLE	role for user (default: network-admin)
 
+  -s SSHPASS	path to sshpass command
   -S SFTPDIR	Path to SFTP export directory (default: $SFTP_EXPORT)
 
   -l		archive log files too
@@ -151,12 +154,14 @@ get_dir() {
 	fi
 }
 
-while getopts 'dhlp:s:S:u:' OPT; do
+while getopts '1dhlp:r:s:S:u:' OPT; do
 	case "$OPT" in
+	1)	STOP_AFTER_FIRST=true ;;
 	d)	DEBUG=true ;;
 	h)	usage; exit 0 ;;
 	l)	ARCHIVE_LOGS=true ;;
 	p)	PASSWORD="$OPTARG" ;;
+	r)	ROLE="$OPTARG" ;;
 	s)	SSHPASS="$OPTARG" ;;
 	S)	SFTP_EXPORT="$OPTARG" ;;
 	u)	USER="$OPTARG" ;;
@@ -227,7 +232,7 @@ for SWITCHDET in $FABRIC_SWITCHES; do
 	if [[ "$SHELL_TYPE" == 'cli' ]]; then
 		for ACCESS in shell sudo; do
 			echo "  $ACCESS access..."
-			cli_command role-modify name "$USER" $ACCESS 
+			cli_command role-modify name "$ROLE" $ACCESS 
 		done
 	fi
 
@@ -247,10 +252,12 @@ for SWITCHDET in $FABRIC_SWITCHES; do
 	[[ -f "$EXPORT_FILENAME" ]] \
 		|| die "Failed to download config export: $EXPORT_FILENAME"
 
-	$ARCHIVE_LOGS || continue
+	if $ARCHIVE_LOGS; then
+		echo "  log files..."
+		get_dir "$LOGDIR"
+	fi
 
-	echo "  log files..."
-	get_dir "$LOGDIR"
+	$STOP_AFTER_FIRST && break
 done
 
 echo "Bundling up the config backup"
