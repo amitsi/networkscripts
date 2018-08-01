@@ -117,3 +117,69 @@ optional arguments:
   -d, --dual-stack      ping ipv6 interfaces as well
   -a, --all             ping all interfaces including vlan based interfaces
   -v, --verbose         verbose mode
+
+
+
+
+Features:
+
+Full mesh ping to all l3/vlan-based interfaces
+Ping/SNMP/SSH test to all global IPs (Mgmt/Inband/Loopback)
+Tests IPv4 & IPv6 addresses
+Reports ping latency
+Skips disabled vrouters
+Command:-
+
+# python check_links.py -h
+usage: check_links.py [-h] [-u USERNAME] [-p PASSWORD] -s SEED_SWITCH
+
+Check-Links
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -u USERNAME, --username USERNAME
+                        seed switch username (default: network-admin)
+  -p PASSWORD, --password PASSWORD
+                        seed switch password (default: test123)
+  -s SEED_SWITCH, --seed-switch SEED_SWITCH
+                        fabric seed switch
+Example Run:-
+
+--snip--
+# python check_links.py -s 10.14.30.11
+[*] Checking reachability to seed switch...Done
+[*] Enabling shell access on seed switch...Done
+[*] Fetching all global IPs from 10.14.30.11...Done
+[*] Fetching all l3/vlan-based link IPs from 10.14.30.11...Done
+
+From local to mgmt-v4 IP 10.14.30.20 of switch ara-L3-01 :
+  * Ping : Pass (ttl=64, time=0.148ms)
+  * SSH  : Pass
+  * SNMP : Fail
+
+From local to mgmt-v6 IP 2721::ce37:abff:fed0:dc47 of switch ara-L3-01 :
+  * Ping : Pass (ttl=64, time=1.07ms)
+  * SSH  : Pass
+  * SNMP : Fail
+
+From local to inband-v4 IP 104.255.62.40 of switch ara-L3-01 :
+  * Ping : Fail
+  * SSH  : Pass
+  * SNMP : Fail
+
+.
+.
+.
+
+[Ping] From dorado21-vrouter to all l3/vlan-based links of dorado19-vrouter :
+  * 106.10.1.2 : Pass (ttl=64, time=2.07ms)
+  * 62:4:12:1::2 : Pass (ttl=64, time=2.05ms)
+  * 106.10.1.1 : Fail (interface is down)
+  * 62:4:12:1::1 : Fail (interface is down)
+  * 106.10.2.2 : Pass (ttl=64, time=2.14ms)
+  * 62:4:12:2::2 : Pass (ttl=64, time=2.07ms)
+  * 106.10.2.1 : Fail (interface is down)
+  * 62:4:12:2::1 : Fail (interface is down)
+  * 106.10.3.2 : Pass (ttl=64, time=2.31ms)
+  * 62:4:12:3::2 : Pass (ttl=64, time=1.99ms)
+--snip--
