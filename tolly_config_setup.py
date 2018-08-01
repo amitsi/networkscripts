@@ -722,7 +722,7 @@ print("")
 print("Adding OSPF for IPv4 network on vrouter=%s network=%s/24 ospf-area "
   "0..." % (vrname3, vip), end='')
 sys.stdout.flush()
-run_cmd("vrouter-ospf-add vrouter-name %s network %s/24 ospf-area 0" % (
+run_cmd("vrouter-ospf-add vrouter-name %s network %s ospf-area 0" % (
 	vrname3, vip))
 print("Done")
 sys.stdout.flush()
@@ -763,7 +763,7 @@ print("")
 print("Adding OSPF for IPv4 network on vrouter=%s network=%s/24 ospf-area "
   "0..." % (vrname4, vip), end='')
 sys.stdout.flush()
-run_cmd("vrouter-ospf-add vrouter-name %s network %s/24 ospf-area 0" % (
+run_cmd("vrouter-ospf-add vrouter-name %s network %s ospf-area 0" % (
 	vrname4, vip))
 print("Done")
 sys.stdout.flush()
@@ -774,8 +774,8 @@ run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
 	"virtual-ip %s" % (g_leaf_list[3], g_leaf_list[3], vrname4, ip2, vip))
 ############################################################################
 ########################-VTEP VXLAN CREATE##################################
-run_cmd("vlan-create id 120 scope fabric 12000000")
-run_cmd("vlan-create id 120 scope fabric 12100000")
+run_cmd("vlan-create id 120 scope fabric 12000000 ports none")
+run_cmd("vlan-create id 120 scope fabric 12100000 ports none")
 ########################-VTEP-VXLAN-ADD##############################################
 print("Setup VTEP for vrouters")
 run_cmd("vtep-vxlan-add name leaf1-vtep vxlan 12000000")
