@@ -773,3 +773,18 @@ print("Setup VTEP for %s-vrouter with ip %s and vip %s" % (g_leaf_list[3], ip2, 
 run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
 	"virtual-ip %s" % (g_leaf_list[3], g_leaf_list[3], vrname4, ip2, vip))
 ############################################################################
+########################-VTEP VXLAN CREATE##################################
+run_cmd("vlan-create id 120 scope fabric 12000000")
+run_cmd("vlan-create id 120 scope fabric 12100000")
+########################-VTEP-VXLAN-ADD##############################################
+print("Setup VTEP for %s-vrouter with ip %s and vip %s" % (g_leaf_list[3], ip2, vip))
+run_cmd("vtep-vxlan-add name leaf1-vtep vxlan 12000000")
+run_cmd("vtep-vxlan-add name leaf2-vtep vxlan 12000000")
+run_cmd("vtep-vxlan-add name leaf3-vtep vxlan 12000000")
+run_cmd("vtep-vxlan-add name leaf4-vtep vxlan 12000000")
+run_cmd("vtep-vxlan-add name leaf1-vtep vxlan 12100000")
+run_cmd("vtep-vxlan-add name leaf2-vtep vxlan 12200000")
+run_cmd("vtep-vxlan-add name leaf3-vtep vxlan 12300000")
+run_cmd("vtep-vxlan-add name leaf4-vtep vxlan 12400000")
+
+############################################################################
