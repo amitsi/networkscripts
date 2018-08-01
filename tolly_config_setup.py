@@ -612,6 +612,19 @@ run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s "
 
 time.sleep(2)
 print("")
+########################-OSFP-##############################################
+print("Adding OSPF for IPv4 network on vrouter=%s network=%s/24 ospf-area "
+  "0..." % (vrname1, vip), end='')
+sys.stdout.flush()
+run_cmd("vrouter-ospf-add vrouter-name %s network %s/24 ospf-area 0" % (
+	vrname1, vip))
+print("Done")
+sys.stdout.flush()
+print("")
+########################-VTEP-##############################################
+print("Setup VTEP for %s-vrouter with ip %s and vip %s" % (g_leaf_list[0], ip1, vip))
+run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
+	"virtual-ip %s" % (g_leaf_list[0], g_leaf_list[0], vrname1, ip1, vip))
 ###################Second Interface#########################################
 print("Creating interface with sw: %s, ip: %s, vlan-id: %s" % (
 g_leaf_list[1], ip2, vrrp_vlan))
@@ -641,6 +654,19 @@ run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s if data "
 
 time.sleep(2)
 print("")
+########################-OSFP-##############################################
+print("Adding OSPF for IPv4 network on vrouter=%s network=%s/24 ospf-area "
+  "0..." % (vrname2, vip), end='')
+sys.stdout.flush()
+run_cmd("vrouter-ospf-add vrouter-name %s network %s/24 ospf-area 0" % (
+	vrname2, vip))
+print("Done")
+sys.stdout.flush()
+print("")
+########################-VTEP-##############################################
+print("Setup VTEP for %s-vrouter with ip %s and vip %s" % (g_leaf_list[1], ip2, vip))
+run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
+	"virtual-ip %s" % (g_leaf_list[1], g_leaf_list[1], vrname2, ip2, vip))
 ############################################################################
 
 ############################################################################
@@ -692,6 +718,19 @@ run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s "
 
 time.sleep(2)
 print("")
+########################-OSFP-##############################################
+print("Adding OSPF for IPv4 network on vrouter=%s network=%s/24 ospf-area "
+  "0..." % (vrname3, vip), end='')
+sys.stdout.flush()
+run_cmd("vrouter-ospf-add vrouter-name %s network %s/24 ospf-area 0" % (
+	vrname3, vip))
+print("Done")
+sys.stdout.flush()
+print("")
+########################-VTEP-##############################################
+print("Setup VTEP for %s-vrouter with ip %s and vip %s" % (g_leaf_list[2], ip1, vip))
+run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
+	"virtual-ip %s" % (g_leaf_list[2], g_leaf_list[2], vrname3, ip1, vip))
 ###################Second Interface#########################################
 print("Creating interface with sw: %s, ip: %s, vlan-id: %s" % (
 g_leaf_list[3], ip2, vrrp_vlan))
@@ -718,7 +757,19 @@ run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s if data "
     "vrrp-id %s vrrp-primary %s vrrp-priority %s mtu %s" % (
 	vrname2, vip, vrrp_vlan, g_vrrp_id, sintf_index,
 	g_sec_vrrp_pri, g_mtu))
-
 time.sleep(2)
 print("")
+########################-OSFP-##############################################
+print("Adding OSPF for IPv4 network on vrouter=%s network=%s/24 ospf-area "
+  "0..." % (vrname4, vip), end='')
+sys.stdout.flush()
+run_cmd("vrouter-ospf-add vrouter-name %s network %s/24 ospf-area 0" % (
+	vrname4, vip))
+print("Done")
+sys.stdout.flush()
+print("")
+########################-VTEP-##############################################
+print("Setup VTEP for %s-vrouter with ip %s and vip %s" % (g_leaf_list[3], ip2, vip))
+run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
+	"virtual-ip %s" % (g_leaf_list[3], g_leaf_list[3], vrname4, ip2, vip))
 ############################################################################
