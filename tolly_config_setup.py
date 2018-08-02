@@ -616,7 +616,7 @@ print("")
 print("Adding OSPF for IPv4 network on vrouter=%s network=%s/24 ospf-area "
   "0..." % (vrname1, vip), end='')
 sys.stdout.flush()
-run_cmd("vrouter-ospf-add vrouter-name %s network %s/24 ospf-area 0" % (
+run_cmd("vrouter-ospf-add vrouter-name %s network %s ospf-area 0" % (
 	vrname1, vip))
 print("Done")
 sys.stdout.flush()
