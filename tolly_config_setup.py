@@ -570,6 +570,10 @@ ip1 = "111.1.1.2/24"
 ip2 = "111.1.1.3/24"
 vrrp_vlan = 111
 
+vip_no_mask = vip.split("/")[0]
+ip1_no_mask = ip1.split("/")[0]
+ip2_no_mask = ip2.split("/")[0]
+
 print("Creating vrrp vlan cluster scoped: %s on %d" % (g_leaf_list[0], vrrp_vlan))
 run_cmd("switch %s vlan-create id %d scope cluster" % (g_leaf_list[0], vrrp_vlan))
 
@@ -622,9 +626,9 @@ print("Done")
 sys.stdout.flush()
 print("")
 ########################-VTEP-##############################################
-print("Setup VTEP for %s-vrouter with ip %s and vip %s" % (g_leaf_list[0], ip1, vip))
+print("Setup VTEP for %s-vrouter with ip %s and vip_no_mask %s" % (g_leaf_list[0], ip1_no_mask, vip_no_mask))
 run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
-	"virtual-ip %s" % (g_leaf_list[0], g_leaf_list[0], vrname1, ip1, vip))
+	"virtual-ip %s" % (g_leaf_list[0], g_leaf_list[0], vrname1, ip1_no_mask, vip_no_mask))
 ###################Second Interface#########################################
 print("Creating interface with sw: %s, ip: %s, vlan-id: %s" % (
 g_leaf_list[1], ip2, vrrp_vlan))
@@ -664,9 +668,9 @@ print("Done")
 sys.stdout.flush()
 print("")
 ########################-VTEP-##############################################
-print("Setup VTEP for %s-vrouter with ip %s and vip %s" % (g_leaf_list[1], ip2, vip))
+print("Setup VTEP for %s-vrouter with ip %s and vip_no_mask %s" % (g_leaf_list[1], ip2_no_mask, vip_no_mask))
 run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
-	"virtual-ip %s" % (g_leaf_list[1], g_leaf_list[1], vrname2, ip2, vip))
+	"virtual-ip %s" % (g_leaf_list[1], g_leaf_list[1], vrname2, ip2_no_mask, vip_no_mask))
 ############################################################################
 
 ############################################################################
@@ -674,6 +678,10 @@ vip = "112.1.1.1/24"
 ip1 = "112.1.1.2/24"
 ip2 = "112.1.1.3/24"
 vrrp_vlan = 112
+
+vip_no_mask = vip.split("/")[0]
+ip1_no_mask = ip1.split("/")[0]
+ip2_no_mask = ip2.split("/")[0]
 
 print("Creating vrrp vlan cluster scoped: %s on %d" % (g_leaf_list[2], vrrp_vlan))
 run_cmd("switch %s vlan-create id %d scope cluster" % (g_leaf_list[2], vrrp_vlan))
@@ -728,9 +736,9 @@ print("Done")
 sys.stdout.flush()
 print("")
 ########################-VTEP-##############################################
-print("Setup VTEP for %s-vrouter with ip %s and vip %s" % (g_leaf_list[2], ip1, vip))
+print("Setup VTEP for %s-vrouter with ip %s and vip_no_mask %s" % (g_leaf_list[2], ip1_no_mask, vip_no_mask))
 run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
-	"virtual-ip %s" % (g_leaf_list[2], g_leaf_list[2], vrname3, ip1, vip))
+	"virtual-ip %s" % (g_leaf_list[2], g_leaf_list[2], vrname3, ip1_no_mask, vip_no_mask))
 ###################Second Interface#########################################
 print("Creating interface with sw: %s, ip: %s, vlan-id: %s" % (
 g_leaf_list[3], ip2, vrrp_vlan))
@@ -769,7 +777,7 @@ print("Done")
 sys.stdout.flush()
 print("")
 ########################-VTEP-##############################################
-print("Setup VTEP for %s-vrouter with ip %s and vip %s" % (g_leaf_list[3], ip2, vip))
+print("Setup VTEP for %s-vrouter with ip %s and vip_no_mask %s" % (g_leaf_list[3], ip2_no_mask, vip_no_mask))
 run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
-	"virtual-ip %s" % (g_leaf_list[3], g_leaf_list[3], vrname4, ip2, vip))
+	"virtual-ip %s" % (g_leaf_list[3], g_leaf_list[3], vrname4, ip2_no_mask, vip_no_mask))
 ############################################################################
