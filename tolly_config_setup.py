@@ -676,3 +676,19 @@ for c_nodes in g_cluster_nodes:
     run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
     	"virtual-ip %s" % (sw2, sw2, vrname2, ip2_no_mask, vip_no_mask))
 ############################################################################
+
+########################-VTEP VXLAN CREATE##################################
+run_cmd("vlan-create id 120 scope fabric 12000000 ports none")
+run_cmd("vlan-create id 120 scope fabric 12100000 ports none")
+########################-VTEP-VXLAN-ADD##############################################
+print("Setup VTEP for vrouters")
+run_cmd("vtep-vxlan-add name leaf1-vtep vxlan 12000000")
+run_cmd("vtep-vxlan-add name leaf2-vtep vxlan 12000000")
+run_cmd("vtep-vxlan-add name leaf3-vtep vxlan 12000000")
+run_cmd("vtep-vxlan-add name leaf4-vtep vxlan 12000000")
+run_cmd("vtep-vxlan-add name leaf1-vtep vxlan 12100000")
+run_cmd("vtep-vxlan-add name leaf2-vtep vxlan 12100000")
+run_cmd("vtep-vxlan-add name leaf3-vtep vxlan 12100000")
+run_cmd("vtep-vxlan-add name leaf4-vtep vxlan 12100000")
+
+############################################################################
