@@ -560,219 +560,123 @@ sys.stdout.flush()
 _print("")
 
 ############################################################################
-g_leaf_list = [nm for nm in g_fab_nodes if nm not in g_spine_list]
-if len(g_leaf_list) != 4:
-	_print("Creation of VRRP interfaces is only allowed for four nodes")
-	exit(0)
+g_vrrp_vlan = [112, 111]
+for c_nodes in g_cluster_nodes:
+    vrrp_vlan = g_vrrp_vlan.pop()
+    vip = "%s.1.1.1/24" % vrrp_vlan
+    ip1 = "%s.1.1.2/24" % vrrp_vlan
+    ip2 = "%s.1.1.3/24" % vrrp_vlan
+
+    vip_no_mask = vip.split("/")[0]
+    ip1_no_mask = ip1.split("/")[0]
+    ip2_no_mask = ip2.split("/")[0]
+
+    sw1 = c_nodes[0]
+    sw2 = c_nodes[1]
+
+    vrname1 = "%s-vrouter" % sw1
+    vrname2 = "%s-vrouter" % sw2
+
+
+    print("Creating vrrp vlan cluster scoped: %s on %d" % (sw1, vrrp_vlan))
+    run_cmd("switch %s vlan-create id %d scope cluster" % (sw1, vrrp_vlan))
+    
+    print("Creating VRRP IPv4 interfaces using:")
+    print("    VIP=%s" % vip)
+    print("    Primary IP=%s" % ip1)
+    print("    Secondary IP=%s" % ip2)
+    print("")
+    
+    run_cmd("vrouter-modify name %s hw-vrrp-id %d" % (vrname1, g_vrrp_id))
+    run_cmd("vrouter-modify name %s hw-vrrp-id %d" % (vrname2, g_vrrp_id))
+    ###################First Interface#########################################
+    print("Creating interface with sw: %s, ip: %s, vlan-id: %s" % (
+    sw1, ip1, vrrp_vlan))
+    run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s if "
+        "data mtu %s" % (vrname1, ip1, vrrp_vlan, g_mtu))
+    
+    time.sleep(2)
+    print("")
+    
+    intf_info = run_cmd("switch %s vrouter-interface-show vrouter-name %s ip %s "
+    		"vlan %s format nic parsable-delim ," % (
+    		    sw1, vrname1, ip1, vrrp_vlan))
+    for intf in intf_info:
+    	if not intf:
+    	    print("No router interface exist")
+    	    exit(0)
+    	pintf_index = intf.split(',')[1]
+    	break
+    
+    print("Setting vrrp-master interface with sw: %s, vip: %s, vlan-id: %s, "
+      "vrrp-id: %s, vrrp-priority: %s" % (sw1, vip, vrrp_vlan,
+    				      g_vrrp_id, g_prim_vrrp_pri))
+    run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s "
+        "if data vrrp-id %s vrrp-primary %s vrrp-priority %s mtu %s" % (
+    	vrname1, vip, vrrp_vlan, g_vrrp_id, pintf_index,
+    	g_prim_vrrp_pri, g_mtu))
+    
+    time.sleep(2)
+    print("")
+    ########################-OSFP-##############################################
+    print("Adding OSPF for IPv4 network on vrouter=%s network=%s/24 ospf-area "
+      "0..." % (vrname1, vip), end='')
+    sys.stdout.flush()
+    run_cmd("vrouter-ospf-add vrouter-name %s network %s ospf-area 0" % (
+    	vrname1, vip))
+    print("Done")
+    sys.stdout.flush()
+    print("")
+    ########################-VTEP-##############################################
+    print("Setup VTEP for %s-vrouter with ip %s and vip_no_mask %s" % (sw1,
+	ip1_no_mask, vip_no_mask))
+    run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
+    	"virtual-ip %s" % (sw1, sw1, vrname1, ip1_no_mask, vip_no_mask))
+    ###################Second Interface#########################################
+    print("Creating interface with sw: %s, ip: %s, vlan-id: %s" % (
+    sw2, ip2, vrrp_vlan))
+    run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s "
+        "if data mtu %s" % (vrname2, ip2, vrrp_vlan, g_mtu))
+    
+    time.sleep(2)
+    print("")
+    
+    intf_info = run_cmd("switch %s vrouter-interface-show vrouter-name %s ip %s "
+    		"vlan %s format nic parsable-delim ," % (
+    		    sw2, vrname2, ip2, vrrp_vlan))
+    for intf in intf_info:
+    	if not intf:
+    	    print("No router interface exist")
+    	    exit(0)
+    	sintf_index = intf.split(',')[1]
+    	break
+    
+    print("Setting vrrp-slave interface with sw: %s, vip: %s, vlan-id: %s, "
+      "vrrp-id: %s, vrrp-priority: %s" % (sw2, vip, vrrp_vlan,
+    				      g_vrrp_id, g_sec_vrrp_pri))
+    run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s if data "
+        "vrrp-id %s vrrp-primary %s vrrp-priority %s mtu %s" % (
+    	vrname2, vip, vrrp_vlan, g_vrrp_id, sintf_index,
+    	g_sec_vrrp_pri, g_mtu))
+    
+    time.sleep(2)
+    print("")
+    ########################-OSFP-##############################################
+    print("Adding OSPF for IPv4 network on vrouter=%s network=%s/24 ospf-area "
+      "0..." % (vrname2, vip), end='')
+    sys.stdout.flush()
+    run_cmd("vrouter-ospf-add vrouter-name %s network %s ospf-area 0" % (
+    	vrname2, vip))
+    print("Done")
+    sys.stdout.flush()
+    print("")
+    ########################-VTEP-##############################################
+    print("Setup VTEP for %s-vrouter with ip %s and vip_no_mask %s" % (sw2,
+	ip2_no_mask, vip_no_mask))
+    run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
+    	"virtual-ip %s" % (sw2, sw2, vrname2, ip2_no_mask, vip_no_mask))
 ############################################################################
-vip = "111.1.1.1/24"
-ip1 = "111.1.1.2/24"
-ip2 = "111.1.1.3/24"
-vrrp_vlan = 111
 
-print("Creating vrrp vlan cluster scoped: %s on %d" % (g_leaf_list[0], vrrp_vlan))
-run_cmd("switch %s vlan-create id %d scope cluster" % (g_leaf_list[0], vrrp_vlan))
-
-print("Creating VRRP IPv4 interfaces using:")
-print("    VIP=%s" % vip)
-print("    Primary IP=%s" % ip1)
-print("    Secondary IP=%s" % ip2)
-print("")
-
-vrname1 = "%s-vrouter" % g_leaf_list[0]
-vrname2 = "%s-vrouter" % g_leaf_list[1]
-run_cmd("vrouter-modify name %s hw-vrrp-id %d" % (vrname1, g_vrrp_id))
-run_cmd("vrouter-modify name %s hw-vrrp-id %d" % (vrname2, g_vrrp_id))
-###################First Interface#########################################
-print("Creating interface with sw: %s, ip: %s, vlan-id: %s" % (
-g_leaf_list[0], ip1, vrrp_vlan))
-run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s if "
-    "data mtu %s" % (vrname1, ip1, vrrp_vlan, g_mtu))
-
-time.sleep(2)
-print("")
-
-intf_info = run_cmd("switch %s vrouter-interface-show vrouter-name %s ip %s "
-		"vlan %s format nic parsable-delim ," % (
-		    g_leaf_list[0], vrname1, ip1, vrrp_vlan))
-for intf in intf_info:
-	if not intf:
-	    print("No router interface exist")
-	    exit(0)
-	pintf_index = intf.split(',')[1]
-	break
-
-print("Setting vrrp-master interface with sw: %s, vip: %s, vlan-id: %s, "
-  "vrrp-id: %s, vrrp-priority: %s" % (g_leaf_list[0], vip, vrrp_vlan,
-				      g_vrrp_id, g_prim_vrrp_pri))
-run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s "
-    "if data vrrp-id %s vrrp-primary %s vrrp-priority %s mtu %s" % (
-	vrname1, vip, vrrp_vlan, g_vrrp_id, pintf_index,
-	g_prim_vrrp_pri, g_mtu))
-
-time.sleep(2)
-print("")
-########################-OSFP-##############################################
-print("Adding OSPF for IPv4 network on vrouter=%s network=%s/24 ospf-area "
-  "0..." % (vrname1, vip), end='')
-sys.stdout.flush()
-run_cmd("vrouter-ospf-add vrouter-name %s network %s ospf-area 0" % (
-	vrname1, vip))
-print("Done")
-sys.stdout.flush()
-print("")
-########################-VTEP-##############################################
-print("Setup VTEP for %s-vrouter with ip %s and vip %s" % (g_leaf_list[0], ip1, vip))
-run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
-	"virtual-ip %s" % (g_leaf_list[0], g_leaf_list[0], vrname1, ip1, vip))
-###################Second Interface#########################################
-print("Creating interface with sw: %s, ip: %s, vlan-id: %s" % (
-g_leaf_list[1], ip2, vrrp_vlan))
-run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s "
-    "if data mtu %s" % (vrname2, ip2, vrrp_vlan, g_mtu))
-
-time.sleep(2)
-print("")
-
-intf_info = run_cmd("switch %s vrouter-interface-show vrouter-name %s ip %s "
-		"vlan %s format nic parsable-delim ," % (
-		    g_leaf_list[1], vrname2, ip2, vrrp_vlan))
-for intf in intf_info:
-	if not intf:
-	    print("No router interface exist")
-	    exit(0)
-	sintf_index = intf.split(',')[1]
-	break
-
-print("Setting vrrp-slave interface with sw: %s, vip: %s, vlan-id: %s, "
-  "vrrp-id: %s, vrrp-priority: %s" % (g_leaf_list[1], vip, vrrp_vlan,
-				      g_vrrp_id, g_sec_vrrp_pri))
-run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s if data "
-    "vrrp-id %s vrrp-primary %s vrrp-priority %s mtu %s" % (
-	vrname2, vip, vrrp_vlan, g_vrrp_id, sintf_index,
-	g_sec_vrrp_pri, g_mtu))
-
-time.sleep(2)
-print("")
-########################-OSFP-##############################################
-print("Adding OSPF for IPv4 network on vrouter=%s network=%s/24 ospf-area "
-  "0..." % (vrname2, vip), end='')
-sys.stdout.flush()
-run_cmd("vrouter-ospf-add vrouter-name %s network %s/24 ospf-area 0" % (
-	vrname2, vip))
-print("Done")
-sys.stdout.flush()
-print("")
-########################-VTEP-##############################################
-print("Setup VTEP for %s-vrouter with ip %s and vip %s" % (g_leaf_list[1], ip2, vip))
-run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
-	"virtual-ip %s" % (g_leaf_list[1], g_leaf_list[1], vrname2, ip2, vip))
-############################################################################
-
-############################################################################
-vip = "112.1.1.1/24"
-ip1 = "112.1.1.2/24"
-ip2 = "112.1.1.3/24"
-vrrp_vlan = 112
-
-print("Creating vrrp vlan cluster scoped: %s on %d" % (g_leaf_list[2], vrrp_vlan))
-run_cmd("switch %s vlan-create id %d scope cluster" % (g_leaf_list[2], vrrp_vlan))
-
-print("Creating VRRP IPv4 interfaces using:")
-print("    VIP=%s" % vip)
-print("    Primary IP=%s" % ip1)
-print("    Secondary IP=%s" % ip2)
-print("")
-
-g_leaf_list = [nm for nm in g_fab_nodes if nm not in g_spine_list]
-vrname1 = "%s-vrouter" % g_leaf_list[2]
-vrname2 = "%s-vrouter" % g_leaf_list[3]
-run_cmd("vrouter-modify name %s hw-vrrp-id %d" % (vrname1, g_vrrp_id))
-run_cmd("vrouter-modify name %s hw-vrrp-id %d" % (vrname2, g_vrrp_id))
-###################First Interface#########################################
-print("Creating interface with sw: %s, ip: %s, vlan-id: %s" % (
-g_leaf_list[0], ip1, vrrp_vlan))
-run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s if "
-    "data mtu %s" % (vrname1, ip1, vrrp_vlan, g_mtu))
-
-time.sleep(2)
-print("")
-
-intf_info = run_cmd("switch %s vrouter-interface-show vrouter-name %s ip %s "
-		"vlan %s format nic parsable-delim ," % (
-		    g_leaf_list[2], vrname1, ip1, vrrp_vlan))
-for intf in intf_info:
-	if not intf:
-	    print("No router interface exist")
-	    exit(0)
-	pintf_index = intf.split(',')[1]
-	break
-
-print("Setting vrrp-master interface with sw: %s, vip: %s, vlan-id: %s, "
-  "vrrp-id: %s, vrrp-priority: %s" % (g_leaf_list[2], vip, vrrp_vlan,
-				      g_vrrp_id, g_prim_vrrp_pri))
-run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s "
-    "if data vrrp-id %s vrrp-primary %s vrrp-priority %s mtu %s" % (
-	vrname1, vip, vrrp_vlan, g_vrrp_id, pintf_index,
-	g_prim_vrrp_pri, g_mtu))
-
-time.sleep(2)
-print("")
-########################-OSFP-##############################################
-print("Adding OSPF for IPv4 network on vrouter=%s network=%s/24 ospf-area "
-  "0..." % (vrname3, vip), end='')
-sys.stdout.flush()
-run_cmd("vrouter-ospf-add vrouter-name %s network %s ospf-area 0" % (
-	vrname3, vip))
-print("Done")
-sys.stdout.flush()
-print("")
-########################-VTEP-##############################################
-print("Setup VTEP for %s-vrouter with ip %s and vip %s" % (g_leaf_list[2], ip1, vip))
-run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
-	"virtual-ip %s" % (g_leaf_list[2], g_leaf_list[2], vrname3, ip1, vip))
-###################Second Interface#########################################
-print("Creating interface with sw: %s, ip: %s, vlan-id: %s" % (
-g_leaf_list[3], ip2, vrrp_vlan))
-run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s "
-    "if data mtu %s" % (vrname2, ip2, vrrp_vlan, g_mtu))
-
-time.sleep(2)
-print("")
-
-intf_info = run_cmd("switch %s vrouter-interface-show vrouter-name %s ip %s "
-		"vlan %s format nic parsable-delim ," % (
-		    g_leaf_list[3], vrname2, ip2, vrrp_vlan))
-for intf in intf_info:
-	if not intf:
-	    print("No router interface exist")
-	    exit(0)
-	sintf_index = intf.split(',')[1]
-	break
-
-print("Setting vrrp-slave interface with sw: %s, vip: %s, vlan-id: %s, "
-  "vrrp-id: %s, vrrp-priority: %s" % (g_leaf_list[3], vip, vrrp_vlan,
-				      g_vrrp_id, g_sec_vrrp_pri))
-run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s if data "
-    "vrrp-id %s vrrp-primary %s vrrp-priority %s mtu %s" % (
-	vrname2, vip, vrrp_vlan, g_vrrp_id, sintf_index,
-	g_sec_vrrp_pri, g_mtu))
-time.sleep(2)
-print("")
-########################-OSFP-##############################################
-print("Adding OSPF for IPv4 network on vrouter=%s network=%s/24 ospf-area "
-  "0..." % (vrname4, vip), end='')
-sys.stdout.flush()
-run_cmd("vrouter-ospf-add vrouter-name %s network %s ospf-area 0" % (
-	vrname4, vip))
-print("Done")
-sys.stdout.flush()
-print("")
-########################-VTEP-##############################################
-print("Setup VTEP for %s-vrouter with ip %s and vip %s" % (g_leaf_list[3], ip2, vip))
-run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
-	"virtual-ip %s" % (g_leaf_list[3], g_leaf_list[3], vrname4, ip2, vip))
-############################################################################
 ########################-VTEP VXLAN CREATE##################################
 run_cmd("vlan-create id 120 scope fabric 12000000 ports none")
 run_cmd("vlan-create id 120 scope fabric 12100000 ports none")
