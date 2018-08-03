@@ -678,11 +678,11 @@ for c_nodes in g_cluster_nodes:
 ############################################################################
 
 ########################-VTEP VXLAN CREATE##################################
-run_cmd("vlan-create id 120 scope fabric 12000000 ports none")
-run_cmd("vlan-create id 120 scope fabric 12100000 ports none")
+run_cmd("vlan-create id 120 scope fabric vxlan 12000000 ports none")
+run_cmd("vlan-create id 120 scope fabric vxlan 12100000 ports none")
 ########################-VTEP-VXLAN-ADD##############################################
 print("Setup VTEP for vrouters")
-run_cmd("vtep-vxlan-add name leaf1-vtep vxlan 12000000")
+run_cmd("vtep-vxlan-add name leaf1-vtep  12000000")
 run_cmd("vtep-vxlan-add name leaf2-vtep vxlan 12000000")
 run_cmd("vtep-vxlan-add name leaf3-vtep vxlan 12000000")
 run_cmd("vtep-vxlan-add name leaf4-vtep vxlan 12000000")
