@@ -677,7 +677,6 @@ for c_nodes in g_cluster_nodes:
     	"virtual-ip %s" % (sw2, sw2, vrname2, ip2_no_mask, vip_no_mask))
 ############################################################################
 
-
 ############################################################################
 vrf_name = "tolly-vrf"
 vlan_list = [120, 121]
@@ -694,4 +693,16 @@ for vlan in vlan_list:
 	      "anycast-gw %d.1.1.1" % (vlan, vlan, vlan))
 	run_cmd("subnet-create vxlan %d00000 network %d.1.1.0/24 vrf %s "
 		"anycast-gw-ip %d.1.1.1" % (vlan, vlan, vrf_name, vlan))
+############################################################################
+
+########################-VTEP-VXLAN-ADD##############################################
+print("Setup VTEP for vrouters")
+run_cmd("vtep-vxlan-add name leaf1-vtep vxlan 12000000")
+run_cmd("vtep-vxlan-add name leaf2-vtep vxlan 12000000")
+run_cmd("vtep-vxlan-add name leaf3-vtep vxlan 12000000")
+run_cmd("vtep-vxlan-add name leaf4-vtep vxlan 12000000")
+run_cmd("vtep-vxlan-add name leaf1-vtep vxlan 12100000")
+run_cmd("vtep-vxlan-add name leaf2-vtep vxlan 12100000")
+run_cmd("vtep-vxlan-add name leaf3-vtep vxlan 12100000")
+run_cmd("vtep-vxlan-add name leaf4-vtep vxlan 12100000")
 ############################################################################
