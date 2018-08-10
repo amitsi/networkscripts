@@ -676,3 +676,22 @@ for c_nodes in g_cluster_nodes:
     run_cmd("vtep-create name %s-vtep location %s vrouter-name %s ip %s "
     	"virtual-ip %s" % (sw2, sw2, vrname2, ip2_no_mask, vip_no_mask))
 ############################################################################
+
+
+############################################################################
+vrf_name = "tolly-vrf"
+vlan_list = [120, 121]
+vxlan_trunk_port = 44
+print("Creating fabric VRF: %s" % (vrf_name))
+run_cmd("vrf-create name %s scope fabric" % (vrf_name))
+print("Setting up port %d for vxlan-loopback-trunk" % (vxlan_trunk_port))
+run_cmd("switch \* trunk-modify name vxlan-loopback-trunk ports %d" % (vxlan_trunk_port))
+for vlan in vlan_list:
+	print("Creating VLAN: %d, VXLAN: %d00000" % (vlan, vlan))
+	run_cmd("vlan-create id %d scope fabric vxlan %d00000" % (vlan, vlan))
+	
+	print("Creating subnet for vlan %d, network %d.1.1.0/24, "
+	      "anycast-gw %d.1.1.1" % (vlan, vlan, vlan))
+	run_cmd("subnet-create vxlan %d00000 network %d.1.1.0/24 vrf %s "
+		"anycast-gw-ip %d.1.1.1" % (vlan, vlan, vrf_name, vlan))
+############################################################################
