@@ -688,11 +688,17 @@ run_cmd("switch \* trunk-modify name vxlan-loopback-trunk ports %d" % (vxlan_tru
 for vlan in vlan_list:
 	print("Creating VLAN: %d, VXLAN: %d00000" % (vlan, vlan))
 	run_cmd("vlan-create id %d scope fabric vxlan %d00000" % (vlan, vlan))
-	
+	ip6 = "%d0:0db8:0001:0000:0000:0000:0000:0001" % vlan
+	forward_ip6 = "%d0:0db8:0001:0000:0000:0000:0000:0100" % vlan
 	print("Creating subnet for vlan %d, network %d.1.1.0/24, "
-	      "anycast-gw %d.1.1.1" % (vlan, vlan, vlan))
+	      "anycast-gw-ip %d.1.1.1 network6 %s/64 anycast-gw-ip6 %s "
+	      "packet-relay enable forward-proto dhcp forward-ip %d.1.1.100 "
+	      "forward-ip6 %s" % (vlan, vlan, vlan, ip6, ip6, vlan, forward_ip6))
 	run_cmd("subnet-create vxlan %d00000 network %d.1.1.0/24 vrf %s "
-		"anycast-gw-ip %d.1.1.1" % (vlan, vlan, vrf_name, vlan))
+		"anycast-gw-ip %d.1.1.1 network6 %s/64 anycast-gw-ip6 %s "
+		"packet-relay enable forward-proto dhcp forward-ip %d.1.1.100 "
+		"forward-ip6 %s" % (vlan, vlan, vrf_name, vlan, ip6, ip6, vlan,
+				    forward_ip6))
 ############################################################################
 
 ########################-VTEP-VXLAN-ADD##############################################
