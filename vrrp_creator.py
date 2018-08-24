@@ -182,7 +182,6 @@ else:
               "is to be added" % g_ipv6_range)
         exit(0)
     set_ipv6 = True
-    set_ipv4 = False
 
 g_vlan_id = args['vlan']
 if not g_vlan_id.isdigit() or int(g_vlan_id) not in range(0, 4095):
