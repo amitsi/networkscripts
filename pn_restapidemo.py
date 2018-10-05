@@ -3,6 +3,8 @@ import json
 import time
 import datetime
 import sys
+import re
+
 currentDT = datetime.datetime.now()
 
 #switch_ip ="10.9.0.121"
@@ -93,6 +95,13 @@ def fabjoin():
 	url = "http://10.9.0.105:80/vRest/fabric-nodes"
 	headers = {'Content-type': 'application/json'}
 	response = requests.get(url, auth=auth)
+	out = json.dumps(response.json(), indent=4)
+	for line in out:
+    		if re.search("name", line):
+        		print line,
+        		if line == None:
+            			print 'no matches found'
+
 	print(json.dumps(response.json(), indent=4))
 	print("*"*100)
 	time.sleep(10)
