@@ -3,8 +3,6 @@ import json
 import time
 import datetime
 import sys
-import re
-
 currentDT = datetime.datetime.now()
 
 #switch_ip ="10.9.0.121"
@@ -43,24 +41,27 @@ def vport():
 
 def ospf_cost():
 	print("Printing Interface Configuration, look at ospf-cost of 10")
-	r = requests.get('http://%s:80/vRest/vrouters/spine2-vrouter/interface-configs' %switch_ip, auth=auth)
-	print(json.dumps(r.json(), indent =4))
-
-	time.sleep(10)
+	r1 = requests.get('http://%s:80/vRest/vrouters/SW45/interface-configs' %switch_ip, auth=auth)
+	print(json.dumps(r1.json(), indent =4))
+	rr1 = json.dumps(r1.json(), indent =4)
+	time.sleep(1)
 	print("*"*100)
 	data_ospf_cost = {"ospf-cost" :  100}
 	print("Configuring ospf-cost of 100")
-	data_static_route = {"network": "1.2.3.4","netmask" :24 , "gateway-ip": "1.2.3.1"}
-	url = ("http://%s:80/vRest/vrouters/spine2-vrouter/interface-configs/eth8.4091" %switch_ip)
+
+	url = ("http://%s:80/vRest/vrouters/SW45/interface-configs/eth0.4091" %switch_ip)
 	data_json = json.dumps(data_ospf_cost)
 	r2 = requests.put(url, data=data_json, auth=auth)
 	#print(r2.json())
 	print(json.dumps(r2.json(), indent =4))
+	rr2 = json.dumps(r2.json(), indent =4)
 	print("Configured OSPF Cost")
 	print("*"*100)
 	print("Printing Interface Configuration, look at ospf-cost of 10")
-	r = requests.get('http://%s/vRest/vrouters/spine2-vrouter/interface-configs' %switch_ip, auth=auth)
-	print(json.dumps(r.json(), indent =4))
+	r3 = requests.get('http://%s/vRest/vrouters/SW45/interface-configs' %switch_ip, auth=auth)
+	print(json.dumps(r3.json(), indent =4))
+	rr3 = json.dumps(r3.json(), indent =4)
+	print ('%s %s %s' % (rr1, rr2, rr3))
 
 def static_route():
 	print("*"*100)
@@ -71,6 +72,7 @@ def static_route():
 	print("*"*100)
 	time.sleep(10)
 	print("Configuring Static Routes Show")
+	data_static_route = {"network": "1.2.3.4","netmask" :24 , "gateway-ip": "1.2.3.1"}
 	url = ("http://%s:80/vRest/vrouters/spine2-vrouter/static-routes" %switch_ip)
 	data_json = json.dumps(data_static_route)
 	headers = {'Content-type': 'application/json'}
@@ -91,17 +93,17 @@ def fabjoin():
 	headers = {'Content-type': 'application/json'}
 	response = requests.get(url, auth=auth)
 	print(json.dumps(response.json(), indent=4))
-
+        time.sleep(10)
 	url = "http://10.9.0.105:80/vRest/fabric-nodes"
 	headers = {'Content-type': 'application/json'}
 	response = requests.get(url, auth=auth)
 	out = json.dumps(response.json(), indent=4)
-	for line in out:
-    		if re.search("name", line):
-        		print line,
-        		if line == None:
-            			print 'no matches found'
-
+	#for line in out:
+#    		if re.search("name", line):
+#        		print line,
+#        		if line == None:
+#            			print 'no matches found'
+        time.sleep(10)
 	print(json.dumps(response.json(), indent=4))
 	print("*"*100)
 	time.sleep(10)
