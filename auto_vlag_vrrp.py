@@ -66,7 +66,6 @@ args = vars(parser.parse_args())
 show_only = args["show_only"]
 g_config_file = args["config"]
 
-print(g_config_file)
 with open(g_config_file, 'r') as conffile:
 	sample_config = conffile.read()
 config = ConfigParser.RawConfigParser(allow_no_value=True)
@@ -210,12 +209,6 @@ for conn in g_main_links:
         if (sw1, sw2) not in g_leaf_cluster_nodes \
             and (sw2, sw1) not in g_leaf_cluster_nodes:
             g_leaf_cluster_nodes.add((sw1, sw2))
-
-print("Fabric: ", g_fab_nodes)
-print("Spines: ", g_spines)
-print("Spine-Leaf: ", g_spine_leaf)
-print("Leaf-Cluster: ", g_leaf_cluster_nodes)
-print("VRRPS:", g_vrrps)
 
 #===============================================================================
 # Cluster Creation
