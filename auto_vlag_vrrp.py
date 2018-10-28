@@ -67,7 +67,7 @@ show_only = args["show_only"]
 g_config_file = args["config"]
 
 with open(g_config_file, 'r') as conffile:
-	sample_config = conffile.read()
+    sample_config = conffile.read()
 config = ConfigParser.RawConfigParser(allow_no_value=True)
 config.readfp(io.BytesIO(sample_config))
 
@@ -77,18 +77,18 @@ g_vr_count = 0
 g_vrrp_id = 15
 g_vrrp_pri = 110
 for section in config.sections():
-	if section.startswith("global"):
-		g_vr_count = int(config.get(section, "vrouter-count"))
-		g_vrrp_id = int(config.get(section, "vrrp-id"))
-		g_vrrp_pri = int(config.get(section, "vrrp-master-priority"))
-	if section.startswith("spine"):
-		name = config.get(section, "name")
-		peer_name = config.get(section, "peer-name")
-		vr_prefix = config.get(section, "vrouter-prefix")
-		g_spines[name] = (peer_name, vr_prefix)
-	if section.startswith("vrrp"):
-		for options in config.options(section):
-			g_vrrps[options] = config.get(section, options).split(',')
+    if section.startswith("global"):
+        g_vr_count = int(config.get(section, "vrouter-count"))
+        g_vrrp_id = int(config.get(section, "vrrp-id"))
+        g_vrrp_pri = int(config.get(section, "vrrp-master-priority"))
+    if section.startswith("spine"):
+        name = config.get(section, "name")
+        peer_name = config.get(section, "peer-name")
+        vr_prefix = config.get(section, "vrouter-prefix")
+        g_spines[name] = (peer_name, vr_prefix)
+    if section.startswith("vrrp"):
+        for options in config.options(section):
+            g_vrrps[options] = config.get(section, options).split(',')
 
 #===============================================================================
 # UTIL FUNCTIONS
@@ -142,7 +142,7 @@ def sleep(sec):
         time.sleep(sec)
 
 def _print(msg, end="nl", must_show=False):
-    if not msg: 
+    if not msg:
         print("")
     elif must_show or not show_only:
         if end == "nl":
@@ -152,8 +152,27 @@ def _print(msg, end="nl", must_show=False):
     else:
         pass
 
+def get_vlag_port(sw1, sw2, port):
+    port_info = run_cmd("switch %s port-show hostname %s port %s "
+                        "format status parsable-delim ," % (sw1, sw2, port))
+    for pinfo in port_info:
+        if not pinfo:
+            print("No port found for host %s" % sw2)
+            exit(0)
+        if "trunk" not in pinfo:
+            return port
+        trunk_info = run_cmd("switch %s trunk-show ports %s format name"
+                             " parsable-delim ," % (sw1, port))
+        for tinfo in trunk_info:
+            if not tinfo:
+                print("No trunk found for port %s" % port)
+                exit(0)
+            return tinfo
+    print("No port found to %s from %s" % (sw2, sw1))
+    exit(0)
+
 #===============================================================================
-# Validation 
+# Validation
 #===============================================================================
 
 # Get list of fabric nodes
@@ -183,7 +202,7 @@ for conn in run_cmd(lldp_cmd):
         exit(0)
     g_main_links.append(conn.split(','))
 
-g_leaf_cluster_nodes = set()
+g_leaf_cluster = set()
 g_spine_leaf = {}
 for conn in g_main_links:
     sw1, p1, p2, sw2 = conn
@@ -194,21 +213,47 @@ for conn in g_main_links:
     if sw1 in g_spines and sw2 in g_spines:
         pass
     elif sw1 in g_spines:
-	if not g_spine_leaf.get(sw1, None):
-		g_spine_leaf[sw1] = [sw2]
-	else:
-		if sw2 not in g_spines[sw1]:
-			g_spine_leaf[sw1].append(sw2)
+        if not g_spine_leaf.get(sw1, None):
+            g_spine_leaf[sw1] = [(sw2,p1)]
+        else:
+            if (sw2,p1) not in g_spine_leaf[sw1]:
+                g_spine_leaf[sw1].append((sw2,p1))
+                if len(g_spine_leaf[sw1]) > 2:
+                    print("Ports from spine %s has more than two leafs "
+                          "connected to it" % sw1)
+                    sys.exit(0)
+        if not g_spine_leaf.get(sw2, None):
+            g_spine_leaf[sw2] = [(sw1,p2)]
+        else:
+            if (sw1,p2) not in g_spine_leaf[sw2]:
+                g_spine_leaf[sw2].append((sw1,p2))
+                if len(g_spine_leaf[sw2]) > 2:
+                    print("Ports from leaf %s has more than two spines "
+                          "connected to it" % sw2)
+                    sys.exit(0)
     elif sw2 in g_spines:
-	if not g_spine_leaf.get(sw2, None):
-		g_spine_leaf[sw2] = [sw1]
-	else:
-		if sw1 not in g_spines[sw2]:
-			g_spine_leaf[sw2].append(sw1)
+        if not g_spine_leaf.get(sw2, None):
+            g_spine_leaf[sw2] = [(sw1,p2)]
+        else:
+            if (sw1,p2) not in g_spine_leaf[sw2]:
+                g_spine_leaf[sw2].append((sw1,p2))
+                if len(g_spine_leaf[sw2]) > 2:
+                    print("Ports from spine %s has more than two leafs "
+                          "connected to it" % sw2)
+                    sys.exit(0)
+            if not g_spine_leaf.get(sw1, None):
+                g_spine_leaf[sw1] = [(sw2,p1)]
+            else:
+                if (sw2,p1) not in g_spine_leaf[sw1]:
+                    g_spine_leaf[sw1].append((sw2,p1))
+                    if len(g_spine_leaf[sw1]) > 2:
+                        print("Ports from leaf %s has more than two spines "
+                              "connected to it" % sw1)
+                        sys.exit(0)
     else:
-        if (sw1, sw2) not in g_leaf_cluster_nodes \
-            and (sw2, sw1) not in g_leaf_cluster_nodes:
-            g_leaf_cluster_nodes.add((sw1, sw2))
+        if (sw1, sw2) not in g_leaf_cluster \
+            and (sw2, sw1) not in g_leaf_cluster:
+            g_leaf_cluster.add((sw1, sw2))
 
 #===============================================================================
 # Cluster Creation
@@ -228,11 +273,15 @@ _print("### Configure Spine Clusters", must_show=True)
 _print("### ========================", must_show=True)
 
 i = 1
+g_spine_cluster = []
 for spine_sw in g_spines:
     c_node = (spine_sw, g_spines[spine_sw][0])
     if c_node in existing_clusters:
         continue
     sw1, sw2 = c_node
+    if (sw1, sw2) in g_spine_cluster or (sw2, sw1) in g_spine_cluster:
+        continue
+    g_spine_cluster.append(c_node)
     _print("Creating cluster: spine-cluster-%d between %s & %s" % (i, sw1, sw2))
     run_cmd("cluster-create name spine-cluster-%d cluster-node-1 %s "
             "cluster-node-2 %s" % (i, sw1, sw2))
@@ -241,11 +290,11 @@ for spine_sw in g_spines:
 _print("")
 _print("### Configure Leaf Clusters", must_show=True)
 _print("### =======================", must_show=True)
-if len(g_leaf_cluster_nodes) == 0:
+if len(g_leaf_cluster) == 0:
     _print("No leaf cluster nodes found", must_show=True)
 else:
     i = 1
-    for c_node in g_cluster_nodes:
+    for c_node in g_leaf_cluster:
         if c_node in existing_clusters:
             continue
         sw1, sw2 = c_node
@@ -253,6 +302,48 @@ else:
         run_cmd("cluster-create name leaf-cluster-%d cluster-node-1 %s "
                 "cluster-node-2 %s" % (i, sw1, sw2))
         i += 1
+
+#===============================================================================
+# vLAG Creation
+#===============================================================================
+
+existing_vlags = []
+vlag_info = run_cmd("vlag-show format name parsable-delim ,")
+for vinfo in vlag_info:
+    if not vinfo:
+        break
+    existing_vlags.append(vinfo)
+
+_print("")
+_print("### Configure Spine-<->-Leaf vLAG", must_show=True)
+_print("### =============================", must_show=True)
+
+for sw in g_spine_leaf:
+    p_sw1, p_port1 = g_spine_leaf[sw][0]
+    p_sw2, p_port2 = g_spine_leaf[sw][1]
+    exists = False
+    for sp1,sp2 in g_spine_cluster:
+        if sw == sp2:
+            exists = True
+            break
+    if exists: continue
+    for l1,l2 in g_leaf_cluster:
+        if sw == l2:
+            exists = True
+            break
+    if exists: continue
+    if (p_sw1 > p_sw2):
+        v_name = "to-%s-%s" % (p_sw1, p_sw2)
+    else:
+        v_name = "to-%s-%s" % (p_sw2, p_sw1)
+    if v_name in existing_vlags:
+        continue
+    v_port_1 = get_vlag_port(sw, p_sw1, p_port1)
+    v_port_2 = get_vlag_port(sw, p_sw2, p_port2)
+    _print("Creating vlag on %s: %s with port %s peer-port %s" % (
+        sw, v_name, v_port_1, v_port_2))
+    run_cmd("switch %s vlag-create name %s port %s peer-port %s" % (
+        sw, v_name, v_port_1, v_port_2))
 
 #===============================================================================
 # vRouter Creation
@@ -309,7 +400,7 @@ for vr_index in g_vrrps:
     _print("")
     _print("### Configure VRRP for all spine vrouter %s" % vr_index,
            must_show=True)
-    _print("### =======================================", must_show=True)
+    _print("### ========================================", must_show=True)
     vrrp_vlan = int(g_vrrps[vr_index][0])
     vrrp_network = g_vrrps[vr_index][1]
     active_switch = g_vrrps[vr_index][2]
@@ -320,7 +411,7 @@ for vr_index in g_vrrps:
     primary_ips = []
     try:
         vip = ip_gen.next()
-	for i in range(g_vr_count):
+        for i in range(len(g_spines)):
             primary_ips.append(ip_gen.next())
     except StopIteration:
         print("Unable to generate more IPs from this range: %s" % vrrp_network)
@@ -350,20 +441,20 @@ for vr_index in g_vrrps:
                 "data" % (vrname, prim_ip, vrrp_vlan))
         sleep(1)
         print("")
-    
+
         intf_info = run_cmd("switch %s vrouter-interface-show vrouter-name %s ip %s "
-    		            "vlan %s format nic parsable-delim ," % (
-    		                swname, vrname, prim_ip, vrrp_vlan))
+                        "vlan %s format nic parsable-delim ," % (
+                            swname, vrname, prim_ip, vrrp_vlan))
         for intf in intf_info:
             if not intf:
                 if show_only:
                     pintf_index = "<nic>"
                     break
                 else:
-        	    print("No router interface exist")
-        	    exit(0)
-        	pintf_index = intf.split(',')[1]
-        	break
+                    print("No router interface exist")
+                    exit(0)
+            pintf_index = intf.split(',')[1]
+            break
 
         if swname == active_switch:
             vrrp_pri = g_vrrp_pri
@@ -373,10 +464,10 @@ for vr_index in g_vrrps:
 
         print("Setting vrrp-vip interface on sw: %s with vip: %s, vlan-id: %s, "
               "vrrp-id: %s, vrrp-priority: %s" % (swname, vip, vrrp_vlan,
-        				          g_vrrp_id, vrrp_pri))
+                                                  g_vrrp_id, vrrp_pri))
         run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s "
                 "if data vrrp-id %s vrrp-primary %s vrrp-priority %s" % (
-        	    vrname, vip, vrrp_vlan, g_vrrp_id, pintf_index, vrrp_pri))
+                    vrname, vip, vrrp_vlan, g_vrrp_id, pintf_index, vrrp_pri))
         sleep(1)
         print("")
 
