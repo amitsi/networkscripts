@@ -73,6 +73,7 @@ config.readfp(io.BytesIO(sample_config))
 
 g_spines = {}
 g_vrrps = []
+g_vr_maps = {}
 g_vr_count = 0
 g_vrrp_id = 15
 g_vrrp_pri = 110
@@ -90,6 +91,9 @@ for section in config.sections():
     if section.startswith("vrrp"):
         for options in config.options(section):
             g_vrrps.append(options.split(','))
+    if section.startswith("vr-maps"):
+        for options in config.options(section):
+            g_vr_maps[options] = config.get(section, options)
 
 #===============================================================================
 # UTIL FUNCTIONS
@@ -325,14 +329,14 @@ else:
 #===============================================================================
 
 existing_vlags = []
-vlag_info = run_cmd("vlag-show format name parsable-delim ,")
+vlag_info = run_cmd("vlag-show format name no-show-headers")
 for vinfo in vlag_info:
     if not vinfo:
         break
     existing_vlags.append(vinfo)
 
 existing_trunks = []
-trunk_info = run_cmd("trunk-show format name parsable-delim ,")
+trunk_info = run_cmd("trunk-show format name no-show-headers")
 for tinfo in trunk_info:
     if not tinfo:
         break
@@ -443,7 +447,7 @@ _print("### ========================", must_show=True)
 
 for swname in sort_str(g_spines):
     for vr_index in range(1, g_vr_count+1):
-        vnname = g_spines[swname][1] + "-vn" + str(vr_index)
+        vnname = g_spines[swname][1] + "-" + g_vr_maps["vr"+str(vr_index)] + "-vn"
         if vnname not in existing_vnets:
             _print("Creating vNET %s on %s..." % (vnname, swname), end='')
             sys.stdout.flush()
@@ -452,7 +456,7 @@ for swname in sort_str(g_spines):
             sleep(2)
             _print("Done")
             sys.stdout.flush()
-        vrname = g_spines[swname][1] + "-vr" + str(vr_index)
+        vrname = g_spines[swname][1] + "-" + g_vr_maps["vr"+str(vr_index)]
         if vrname in existing_vrouters:
             _print("vRouter %s already exists on %s" % (vrname, swname))
             continue
@@ -496,7 +500,7 @@ for vrrp_entry in g_vrrps:
     ip_index = 0
     pri_offset = 1
     for swname in g_spines:
-        vrname = g_spines[swname][1] + "-" + vr_index
+        vrname = g_spines[swname][1] + "-" + g_vr_maps[vr_index]
         prim_ip = primary_ips[ip_index]
         ip_index += 1
         if not vlan_created:
