@@ -187,6 +187,21 @@ def get_vlag_port(sw1, sw2, port):
     exit(0)
 
 #===============================================================================
+# Fix Ports
+#===============================================================================
+run_cmd("switch spine1,spine2,spine3,spine4 port-config-modify port 113,114,115,116,109,105,101,97,93,89,85,81,77,73,69,65,61,57,53,49,45,41,37,33,29,25,21,17,13,9,5,1 speed 40g enable", ignore_err=True)
+run_cmd("switch spine1,spine2,spine3,spine4 trunk-modify trunk-id 128 speed 40g", ignore_err=True)
+
+run_cmd("switch leaf1 port-config-modify port 49,53,57,61,65,69 speed 40g enable", ignore_err=True)
+run_cmd("switch leaf1 trunk-modify trunk-id 128 speed 40g", ignore_err=True)
+run_cmd("switch leaf2 port-config-modify port 49,53,57,61,65,69 speed 40g enable", ignore_err=True)
+run_cmd("switch leaf2 trunk-modify trunk-id 128 speed 40g", ignore_err=True)
+run_cmd("switch leaf3 port-config-modify port 49,53,57,61,65,69 speed 40g enable", ignore_err=True)
+run_cmd("switch leaf3 trunk-modify trunk-id 128 speed 40g", ignore_err=True)
+run_cmd("switch leaf4 port-config-modify port 49,53,57,61,65,69 speed 40g enable", ignore_err=True)
+run_cmd("switch leaf4 trunk-modify trunk-id 128 speed 40g", ignore_err=True)
+
+#===============================================================================
 # Validation
 #===============================================================================
 
@@ -227,7 +242,7 @@ for conn in g_main_links:
     if sw1 in g_ignore_nodes or sw2 in g_ignore_nodes:
         continue
     # Get cluster node list
-    if sw1 in g_spines and sw2 in g_spines:
+    if sw1 in g_spines and sw2 == g_spines[sw1][0]:
         pass
     elif sw1 in g_spines:
         if not g_spine_leaf.get(sw1, None):
@@ -306,7 +321,7 @@ else:
         i += 1
 
 #===============================================================================
-# vLAG Creation
+# LAG/vLAG Creation
 #===============================================================================
 
 existing_vlags = []
@@ -324,27 +339,11 @@ for tinfo in trunk_info:
     existing_trunks.append(tinfo)
 
 _print("")
-_print("### Configure Spine-<->-Leaf vLAG", must_show=True)
-_print("### =============================", must_show=True)
+_print("### Configure Trunks", must_show=True)
+_print("### ================", must_show=True)
 
 done = []
 for sw in g_spine_leaf:
-    exists = False
-    trunk = True
-    for sp1,sp2 in g_spine_cluster:
-        if sw == sp2:
-            exists = True
-            break
-        if sw == sp1:
-            trunk = False
-    if exists: continue
-    for l1,l2 in g_leaf_cluster:
-        if sw == l2:
-            exists = True
-            break
-        if sw == l1:
-            trunk = False
-    if exists: continue
     for conn_sw in g_spine_leaf[sw]:
         p_sw1 = conn_sw
         p_port1 = g_spine_leaf[sw][p_sw1]
@@ -359,23 +358,64 @@ for sw in g_spine_leaf:
         if not p_sw2: continue
         p_port2 = g_spine_leaf[sw][p_sw2]
         p_sw1, p_sw2 = sort_str([p_sw1, p_sw2])
-        v_name = "to-%s-%s" % (p_sw1, p_sw2)
-        v_port_1 = get_vlag_port(sw, p_sw1, p_port1)
-        v_port_2 = get_vlag_port(sw, p_sw2, p_port2)
-        if trunk:
-            if v_name in existing_trunks:
-                continue
-            _print("Creating trunk on %s: %s with ports %s,%s" % (
-                sw, v_name, v_port_1, v_port_2))
-            run_cmd("switch %s trunk-create name %s ports %s,%s" % (
-                sw, v_name, v_port_1, v_port_2))
-        else:
-            if v_name in existing_vlags:
-                continue
-            _print("Creating vlag on %s: %s with port %s peer-port %s" % (
-                sw, v_name, v_port_1, v_port_2))
-            run_cmd("switch %s vlag-create name %s port %s peer-port %s" % (
-                sw, v_name, v_port_1, v_port_2))
+        t_name = "to-%s-%s" % (p_sw1, p_sw2)
+        if t_name in existing_trunks:
+            continue
+        _print("Creating trunk on %s: %s with ports %s,%s" % (
+            sw, t_name, p_port1, p_port2))
+        run_cmd("switch %s trunk-create name %s ports %s,%s" % (
+            sw, t_name, p_port1, p_port2))
+
+_print("")
+_print("### Configure vLAGs", must_show=True)
+_print("### ===============", must_show=True)
+done = []
+for sw in g_spine_leaf:
+    is_cluster = False
+    p_sw1 = sw
+    for sp1,sp2 in g_spine_cluster:
+        if sw == sp1:
+            is_cluster = True
+            p_sw2 = sp2
+            break
+    if not is_cluster:
+        for l1,l2 in g_leaf_cluster:
+            if sw == l1:
+                is_cluster = True
+                p_sw2 = l2
+                break
+    if not is_cluster: continue
+    for conn_sw in g_spine_leaf[sw]:
+        is_cluster = False
+        suffix = ""
+        for sp1,sp2 in g_spine_cluster:
+            if conn_sw == sp1:
+                suffix = "-pair"
+            elif conn_sw == sp2:
+                is_cluster = True
+                break
+        if not is_cluster:
+            for l1,l2 in g_leaf_cluster:
+                if conn_sw == l1:
+                    suffix = "-pair"
+                elif conn_sw == l2:
+                    is_cluster = True
+                    break
+        if is_cluster: continue
+        p_port1 = g_spine_leaf[p_sw1][conn_sw]
+        p_port2 = g_spine_leaf[p_sw2].get(conn_sw, None)
+        if not p_port2:
+            continue
+        p_sw1, p_sw2 = sort_str([p_sw1, p_sw2])
+        v_name = "to-%s%s" % (conn_sw, suffix)
+        v_port_1 = get_vlag_port(p_sw1, conn_sw, p_port1)
+        v_port_2 = get_vlag_port(p_sw2, conn_sw, p_port2)
+        if v_name in existing_trunks:
+            continue
+        _print("Creating vlag on %s: %s with port %s peer-port %s" % (
+            sw, v_name, v_port_1, v_port_2))
+        run_cmd("switch %s vlag-create name %s port %s peer-port %s" % (
+            sw, v_name, v_port_1, v_port_2))
 
 #===============================================================================
 # vRouter Creation
