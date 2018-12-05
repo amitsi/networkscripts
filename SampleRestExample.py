@@ -7,7 +7,7 @@ currentDT = datetime.datetime.now()
 
 #switch_ip ="10.9.0.121"
 switch_ip ="10.36.10.45"
-#cost = sys.argv[2]
+
 
 auth = requests.auth.HTTPBasicAuth('network-admin', 'test123')
 def main():
