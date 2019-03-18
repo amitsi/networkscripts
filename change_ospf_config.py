@@ -1,3 +1,4 @@
+#Configuration Paste with Sleep timers
 #!/usr/bin/python
 
 from __future__ import print_function
