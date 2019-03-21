@@ -1,21 +1,25 @@
 from __future__ import print_function
-from binascii import hexlify
 import subprocess
 import argparse
 import errno
-import struct
-import socket
 import time
 import sys
-import io
-import re
-import ConfigParser
 
 #===============================================================================
 # ARGUMENT PARSING
 #===============================================================================
 
 parser = argparse.ArgumentParser(description='Multi-vRouter Setup Script')
+parser.add_argument(
+    '--swn',
+    help='switch to multiple vrouters',
+    required=True
+)
+parser.add_argument(
+    '--sw1',
+    help='switch to host 1 vrouter',
+    required=True
+)
 parser.add_argument(
     '--show-only',
     help='will show commands it will run',
@@ -25,9 +29,11 @@ parser.add_argument(
 args = vars(parser.parse_args())
 
 show_only = args["show_only"]
+g_swn = args["swn"]
+g_sw1 = args["sw1"]
 g_vr_count = 32
-g_ip_prefix = "192.168."
-g_ip_netmask = "/24"
+g_ip_prefix = "192.168.1."
+g_ip_netmask = "/30"
 
 #===============================================================================
 # UTIL FUNCTIONS
@@ -105,8 +111,16 @@ for finfo in fab_info:
     g_fab_nodes.append(sw_name)
     g_fab_name = fab_name
 
+# Validate switches
+if g_swn not in g_fab_nodes:
+    print("Switch %s is not in fabric %s" % (g_swn, g_fab_name))
+    exit(0)
+if g_sw1 not in g_fab_nodes:
+    print("Switch %s is not in fabric %s" % (g_sw1, g_fab_name))
+    exit(0)
+
 #===============================================================================
-# vRouter Creation
+# Multi-vRouter & Single-vRouter Configuration
 #===============================================================================
 
 existing_vnets = []
@@ -126,49 +140,97 @@ for vinfo in vrouter_info:
     existing_vrouters.append(vr_name)
 
 _print("")
-_print("### Configure vRouters", must_show=True)
-_print("### ==================", must_show=True)
+_print("### Configuring %d vRouters" % g_vr_count, must_show=True)
+_print("### =======================", must_show=True)
 
-for swname in sort_str(g_fab_nodes):
-    for vr_index in range(1, g_vr_count+1):
-        vnname = swname + "-vn-" + str(vr_index)
-        if vnname not in existing_vnets:
-            _print("Creating vNET %s on %s..." % (vnname, swname), end='')
-            run_cmd("switch %s vnet-create name %s scope fabric" % (
-                        swname, vnname))
-            sleep(1)
-            _print("Done")
+g_vlan_ipindex_list = []
+ipindex = 1
 
-        vrname = swname + "-vr-" + str(vr_index)
-        if vrname in existing_vrouters:
-            _print("vRouter %s already exists on %s" % (vrname, swname))
-            continue
-        _print("Creating vRouter %s on %s..." % (vrname, swname), end='')
-        run_cmd("switch %s vrouter-create name %s vnet %s "
-                "router-type hardware" % (swname, vrname, vnname))
+for vr_index in range(1, g_vr_count+1):
+    vnname = g_swn + "-vn-" + str(vr_index)
+    if vnname not in existing_vnets:
+        _print("Creating vNET %s on %s..." % (vnname, g_swn), end='')
+        run_cmd("switch %s vnet-create name %s scope fabric" % (
+                    g_swn, vnname))
         sleep(1)
         _print("Done")
 
-        vlan_id = 100 + vr_index
-        _print("Creating vlan, local scoped: %d on %s" % (vlan_id, swname))
-        run_cmd("switch %s vlan-create id %d scope local" % (swname, vlan_id))
-        sleep(1)
-        _print("Done")
+    vrname = g_swn + "-vr-" + str(vr_index)
+    if vrname in existing_vrouters:
+        _print("vRouter %s already exists on %s" % (vrname, g_swn))
+        continue
+    _print("Creating vRouter %s on %s..." % (vrname, g_swn), end='')
+    run_cmd("switch %s vrouter-create name %s vnet %s "
+            "router-type hardware" % (g_swn, vrname, vnname))
+    sleep(1)
+    _print("Done")
 
-        vr_ip = g_ip_prefix + str(vr_index) + "." + str(vlan_id) + g_ip_netmask
-        _print("Creating interface on vrouter %s with ip %s & vlan %s on "
-                "switch %s" % (vrname, vr_ip, vlan_id, swname))
-        run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s" % (
-            vrname, vr_ip, vlan_id))
-        sleep(1)
-        _print("Done")
+    vlan_id = 100 + vr_index
+    _print("Creating vlan, local scoped: %d on %s" % (vlan_id, g_swn))
+    run_cmd("switch %s vlan-create id %d scope local" % (g_swn, vlan_id))
+    sleep(1)
+    _print("Done")
 
-        _print("Adding bgp network on %s for %s on switch %s..." % (
-            vrname, vr_ip, swname))
-        run_cmd("switch %s vrouter-bgp-network-add vrouter-name %s "
-                "network %s" % (swname, vrname, vr_ip))
-        sleep(2)
-        _print("Done")
-        _print("")
+    vr_ip = g_ip_prefix + str(ipindex) + g_ip_netmask
+    _print("Creating interface on vrouter %s with ip %s & vlan %s on "
+            "switch %s" % (vrname, vr_ip, vlan_id, g_swn))
+    run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s" % (
+        vrname, vr_ip, vlan_id))
+    sleep(1)
+    _print("Done")
+    g_vlan_ipindex_list.append((vlan_id, ipindex+1))
+    ipindex += 4
+
+    _print("Adding bgp network on %s for %s on switch %s..." % (
+        vrname, vr_ip, g_swn))
+    run_cmd("switch %s vrouter-bgp-network-add vrouter-name %s "
+            "network %s" % (g_swn, vrname, vr_ip))
+    sleep(2)
+    _print("Done")
+    _print("")
+
+#===============================================================================
+_print("")
+_print("### Configuring single vRouter", must_show=True)
+_print("### ==========================", must_show=True)
+
+vnname = g_sw1 + "-vn"
+if vnname not in existing_vnets:
+    _print("Creating vNET %s on %s..." % (vnname, g_sw1), end='')
+    run_cmd("switch %s vnet-create name %s scope fabric" % (
+                g_sw1, vnname))
+    sleep(1)
+    _print("Done")
+
+vrname = g_sw1 + "-vr"
+if vrname not in existing_vrouters:
+    _print("Creating vRouter %s on %s..." % (vrname, g_sw1), end='')
+    run_cmd("switch %s vrouter-create name %s vnet %s "
+            "router-type hardware" % (g_sw1, vrname, vnname))
+    sleep(1)
+    _print("Done")
+
+for entry in g_vlan_ipindex_list:
+    vlan_id, ipindex = entry
+    _print("Creating vlan, local scoped: %d on %s" % (vlan_id, g_sw1))
+    run_cmd("switch %s vlan-create id %d scope local" % (g_sw1, vlan_id))
+    sleep(1)
+    _print("Done")
+
+    vr_ip = g_ip_prefix + str(ipindex) + g_ip_netmask
+    _print("Creating interface on vrouter %s with ip %s & vlan %s on "
+            "switch %s" % (vrname, vr_ip, vlan_id, g_sw1))
+    run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s" % (
+        vrname, vr_ip, vlan_id))
+    sleep(1)
+    _print("Done")
+
+    _print("Adding bgp network on %s for %s on switch %s..." % (
+        vrname, vr_ip, g_sw1))
+    run_cmd("switch %s vrouter-bgp-network-add vrouter-name %s "
+            "network %s" % (g_sw1, vrname, vr_ip))
+    sleep(2)
+    _print("Done")
+    _print("")
 
 #===============================================================================
