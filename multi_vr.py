@@ -34,6 +34,8 @@ g_sw1 = args["sw1_ip"]
 g_vr_count = 32
 g_ip_prefix = "192.168.1."
 g_ip_netmask = "/30"
+g_swn_as = 65000
+g_sw1_as = 65035
 
 #===============================================================================
 # UTIL FUNCTIONS
@@ -131,8 +133,9 @@ _print("")
 _print("### Configuring %d vRouters" % g_vr_count, must_show=True)
 _print("### =======================", must_show=True)
 
-g_vlan_ipindex_list = []
+vlan_ip_as_list = []
 ipindex = 1
+swn_as = g_swn_as
 
 for vr_index in range(1, g_vr_count+1):
     vnname = "vnet" + str(vr_index)
@@ -159,14 +162,29 @@ for vr_index in range(1, g_vr_count+1):
     _print("Done")
 
     vr_ip = g_ip_prefix + str(ipindex) + g_ip_netmask
+    vr_neigh_ip = g_ip_prefix + str(ipindex+1)
+    swn_as += 1
     _print("Creating interface on vrouter %s with ip %s & vlan %s on "
             "switch %s" % (vrname, vr_ip, vlan_id, g_swn))
     run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s" % (
         vrname, vr_ip, vlan_id), g_swn)
     sleep(1)
     _print("Done")
-    g_vlan_ipindex_list.append((vlan_id, ipindex+1))
+    vlan_ip_as_list.append((vlan_id, ipindex+1, swn_as))
     ipindex += 4
+
+    _print("Setting vRouter BGP-AS (%d) on %s..." % (swn_as, vrname), end='')
+    run_cmd("vrouter-modify name %s bgp-as %d" % (vrname, swn_as), g_swn)
+    sleep(1)
+    _print("Done")
+
+    _print("Adding bgp neighbor on %s for %s on switch %s..." % (
+        vrname, vr_neigh_ip, g_swn))
+    run_cmd("vrouter-bgp-add vrouter-name %s neighbor %s "
+            "remote-as %d" % (vrname, vr_neigh_ip, g_sw1_as), g_sw1)
+    sleep(2)
+    _print("Done")
+    _print("")
 
     _print("Adding bgp network on %s for %s on switch %s..." % (
         vrname, vr_ip, g_swn))
@@ -211,19 +229,33 @@ if vrname not in existing_vrouters:
     sleep(1)
     _print("Done")
 
-for entry in g_vlan_ipindex_list:
-    vlan_id, ipindex = entry
+_print("Setting vRouter BGP-AS (%d) on %s..." % (g_sw1_as, vrname), end='')
+run_cmd("vrouter-modify name %s bgp-as %d" % (vrname, g_sw1_as), g_sw1)
+sleep(1)
+_print("Done")
+_print("")
+
+for entry in vlan_ip_as_list:
+    vlan_id, ipindex, swn_as = entry
     _print("Creating vlan, local scoped: %d on %s" % (vlan_id, g_sw1))
     run_cmd("vlan-create id %d scope local" % (vlan_id), g_sw1)
     sleep(1)
     _print("Done")
 
     vr_ip = g_ip_prefix + str(ipindex) + g_ip_netmask
+    vr_neigh_ip = g_ip_prefix + str(ipindex-1)
     _print("Creating interface on vrouter %s with ip %s & vlan %s on "
             "switch %s" % (vrname, vr_ip, vlan_id, g_sw1))
     run_cmd("vrouter-interface-add vrouter-name %s ip %s vlan %s" % (
         vrname, vr_ip, vlan_id), g_sw1)
     sleep(1)
+    _print("Done")
+
+    _print("Adding bgp neighbor on %s for %s on switch %s..." % (
+        vrname, vr_neigh_ip, g_sw1))
+    run_cmd("vrouter-bgp-add vrouter-name %s neighbor %s "
+            "remote-as %d" % (vrname, vr_neigh_ip, swn_as), g_sw1)
+    sleep(2)
     _print("Done")
 
     _print("Adding bgp network on %s for %s on switch %s..." % (
